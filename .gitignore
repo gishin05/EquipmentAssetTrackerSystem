@@ -1,0 +1,13 @@
+# Eclipse Build Output
+bin/
+
+# Application SQLite Database
+tracker.db
+
+# Temporary & Remnant Files
+sources.txt
+IM_extracted/
+
+# OS metadata
+.DS_Store
+Thumbs.db
