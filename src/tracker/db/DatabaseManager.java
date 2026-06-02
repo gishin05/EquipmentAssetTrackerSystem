@@ -37,6 +37,7 @@ public class DatabaseManager {
 
         String createEquipmentTable = "CREATE TABLE IF NOT EXISTS equipment (" +
                 "equipment_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "equipment_name TEXT, " +
                 "serial_number TEXT NOT NULL UNIQUE, " +
                 "category_id INTEGER, " +
                 "technical_specifications TEXT, " +
@@ -44,9 +45,8 @@ public class DatabaseManager {
                 "purchase_cost REAL, " +
                 "purchase_date TEXT, " +
                 "equipment_status TEXT, " +
-                "assigned_to INTEGER, " +
-                "FOREIGN KEY(category_id) REFERENCES categories(category_id), " +
-                "FOREIGN KEY(assigned_to) REFERENCES users(user_id)" +
+                "assigned_to TEXT, " +
+                "FOREIGN KEY(category_id) REFERENCES categories(category_id)" +
                 ");";
 
         String createBookingsTable = "CREATE TABLE IF NOT EXISTS bookings (" +
@@ -90,6 +90,19 @@ public class DatabaseManager {
                 "FOREIGN KEY(user_id) REFERENCES users(user_id)" +
                 ");";
 
+        String createChangeLogsTable = "CREATE TABLE IF NOT EXISTS change_logs (" +
+                "change_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "table_name TEXT NOT NULL, " +
+                "record_id INTEGER, " +
+                "record_name TEXT, " +
+                "field_name TEXT, " +
+                "old_value TEXT, " +
+                "new_value TEXT, " +
+                "change_timestamp TEXT, " +
+                "user_id INTEGER, " +
+                "FOREIGN KEY(user_id) REFERENCES users(user_id)" +
+                ");";
+
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
             stmt.execute(createCategoriesTable);
             stmt.execute(createUsersTable);
@@ -97,6 +110,14 @@ public class DatabaseManager {
             stmt.execute(createBookingsTable);
             stmt.execute(createMaintenanceLogsTable);
             stmt.execute(createAuditLogsTable);
+            stmt.execute(createChangeLogsTable);
+            
+            // Migration: add equipment_name column if it doesn't exist (for existing databases)
+            try {
+                stmt.execute("ALTER TABLE equipment ADD COLUMN equipment_name TEXT");
+            } catch (SQLException ignored) {
+                // Column already exists — safe to ignore
+            }
             
             insertDefaultAdmin(conn);
         } catch (SQLException e) {

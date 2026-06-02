@@ -833,3 +833,40 @@
     -fx-text-fill: -accent;
     -fx-font-weight: bold;
 }
+
+
+/* ── Logs Sub-header Tab Bar ──────────────────────────────── */
+
+.log-tab-bar {
+    -fx-background-color: -bg-secondary;
+    -fx-border-color: -border;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 0 0 0 0;
+    -fx-spacing: 0;
+}
+
+.log-tab-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text-secondary;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 14 28 14 28;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-border-color: transparent transparent transparent transparent;
+    -fx-border-width: 0 0 3 0;
+    -fx-cursor: hand;
+}
+
+.log-tab-btn:hover {
+    -fx-background-color: rgba(67, 97, 238, 0.06);
+    -fx-text-fill: -text-primary;
+}
+
+.log-tab-btn-active {
+    -fx-text-fill: -accent;
+    -fx-border-color: transparent transparent -accent transparent;
+    -fx-border-width: 0 0 3 0;
+    -fx-background-color: rgba(67, 97, 238, 0.08);
+    -fx-effect: dropshadow(gaussian, rgba(67, 97, 238, 0.2), 8, 0.15, 0, 2);
+}

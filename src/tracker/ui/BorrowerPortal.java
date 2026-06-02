@@ -89,14 +89,6 @@ public class BorrowerPortal {
         header.setAlignment(Pos.CENTER_LEFT);
         header.setPadding(new Insets(12, 32, 12, 32));
 
-        // Brand Label
-        Label brandLabel = new Label("⚡ EAT System");
-        brandLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: -text-primary; -fx-padding: 0 10 0 0;");
-
-        // Vertical Separator
-        Separator brandSep = new Separator(javafx.geometry.Orientation.VERTICAL);
-        brandSep.setStyle("-fx-padding: 0 5 0 5;");
-
         // Horizontal Nav Container
         navBtnContainer = new HBox(10);
         navBtnContainer.setAlignment(Pos.CENTER_LEFT);
@@ -127,7 +119,7 @@ public class BorrowerPortal {
         logoutBtn.setId("borrower-logout");
         logoutBtn.setOnAction(e -> mainApp.showLoginScreen());
 
-        header.getChildren().addAll(brandLabel, brandSep, navBtnContainer, spacer, userLabel, userName, roleBadge, logoutBtn);
+        header.getChildren().addAll(navBtnContainer, spacer, userLabel, userName, roleBadge, logoutBtn);
         return header;
     }
 
@@ -338,7 +330,7 @@ public class BorrowerPortal {
         equipmentBox.setConverter(new javafx.util.StringConverter<Equipment>() {
             @Override
             public String toString(Equipment eq) {
-                return eq == null ? "" : eq.getSerialNumber();
+                return eq == null ? "" : (eq.getEquipmentName() + " (" + eq.getTechnicalSpecifications() + ")");
             }
 
             @Override
@@ -346,8 +338,13 @@ public class BorrowerPortal {
                 if (string == null || string.trim().isEmpty()) {
                     return null;
                 }
+                String trimmed = string.trim();
                 return availableEquipment.stream()
-                    .filter(eq -> eq.getSerialNumber().equalsIgnoreCase(string.trim()))
+                    .filter(eq -> {
+                        String fullDisplay = eq.getEquipmentName() + " (" + eq.getTechnicalSpecifications() + ")";
+                        return fullDisplay.equalsIgnoreCase(trimmed) || 
+                               (eq.getEquipmentName() != null && eq.getEquipmentName().equalsIgnoreCase(trimmed));
+                    })
                     .findFirst()
                     .orElse(null);
             }
@@ -360,7 +357,7 @@ public class BorrowerPortal {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText(item.getSerialNumber() + " (" + item.getTechnicalSpecifications() + ")");
+                    setText(item.getEquipmentName() + " (" + item.getTechnicalSpecifications() + ")");
                 }
             }
         });
@@ -371,12 +368,18 @@ public class BorrowerPortal {
                 equipmentBox.hide();
             } else {
                 Equipment selected = equipmentBox.getSelectionModel().getSelectedItem();
-                if (selected != null && selected.getSerialNumber().equalsIgnoreCase(newVal.trim())) {
-                    return;
+                String trimmed = newVal.trim();
+                if (selected != null) {
+                    String fullDisplay = selected.getEquipmentName() + " (" + selected.getTechnicalSpecifications() + ")";
+                    if (fullDisplay.equalsIgnoreCase(trimmed) || 
+                        (selected.getEquipmentName() != null && selected.getEquipmentName().equalsIgnoreCase(trimmed))) {
+                        return;
+                    }
                 }
                 javafx.collections.ObservableList<Equipment> filteredList = FXCollections.observableArrayList();
                 for (Equipment eq : originalList) {
-                    if (eq.getSerialNumber().toLowerCase().contains(newVal.toLowerCase()) ||
+                    if ((eq.getEquipmentName() != null && eq.getEquipmentName().toLowerCase().contains(newVal.toLowerCase())) ||
+                        (eq.getSerialNumber() != null && eq.getSerialNumber().toLowerCase().contains(newVal.toLowerCase())) ||
                         (eq.getTechnicalSpecifications() != null && eq.getTechnicalSpecifications().toLowerCase().contains(newVal.toLowerCase()))) {
                         filteredList.add(eq);
                     }
@@ -391,13 +394,29 @@ public class BorrowerPortal {
         });
 
         // Start date
-        Label startLabel = new Label("START DATE");
+        Label startLabel = new Label("START DATE & TIME");
         startLabel.getStyleClass().add("form-label");
 
         DatePicker startDate = new DatePicker();
         startDate.setPromptText("Select start date");
         startDate.setMaxWidth(Double.MAX_VALUE);
         startDate.setValue(LocalDate.now());
+        
+        Spinner<Integer> startHourSpinner = new Spinner<>(0, 23, java.time.LocalTime.now().getHour());
+        startHourSpinner.setEditable(true);
+        startHourSpinner.setPrefWidth(75);
+        startHourSpinner.getStyleClass().add(Spinner.STYLE_CLASS_SPLIT_ARROWS_VERTICAL);
+
+        Spinner<Integer> startMinuteSpinner = new Spinner<>(0, 59, java.time.LocalTime.now().getMinute());
+        startMinuteSpinner.setEditable(true);
+        startMinuteSpinner.setPrefWidth(75);
+        startMinuteSpinner.getStyleClass().add(Spinner.STYLE_CLASS_SPLIT_ARROWS_VERTICAL);
+
+        Label startColonLabel = new Label(":");
+        startColonLabel.setStyle("-fx-text-fill: -text-primary; -fx-font-size: 16px; -fx-font-weight: bold;");
+
+        HBox startTimeBox = new HBox(6, startDate, startHourSpinner, startColonLabel, startMinuteSpinner);
+        startTimeBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
         // Return date
         Label returnLabel = new Label("EXPECTED RETURN DATE");
@@ -433,7 +452,11 @@ public class BorrowerPortal {
             if (selectedEquip == null) {
                 String enteredText = equipmentBox.getEditor().getText().trim();
                 selectedEquip = availableEquipment.stream()
-                    .filter(eq -> eq.getSerialNumber().equalsIgnoreCase(enteredText))
+                    .filter(eq -> {
+                        String fullDisplay = eq.getEquipmentName() + " (" + eq.getTechnicalSpecifications() + ")";
+                        return fullDisplay.equalsIgnoreCase(enteredText) || 
+                               (eq.getEquipmentName() != null && eq.getEquipmentName().equalsIgnoreCase(enteredText));
+                    })
                     .findFirst()
                     .orElse(null);
             }
@@ -454,7 +477,10 @@ public class BorrowerPortal {
             Booking booking = new Booking();
             booking.setEquipmentId(selectedEquip.getEquipmentId());
             booking.setBorrowerId(currentUser.getUserId());
-            booking.setStartDatetime(startDate.getValue().toString());
+            
+            String startTimeStr = String.format("%02d:%02d", startHourSpinner.getValue(), startMinuteSpinner.getValue());
+            booking.setStartDatetime(startDate.getValue().toString() + " " + startTimeStr);
+            
             booking.setExpectedReturnDatetime(returnDate.getValue().toString());
             booking.setPurposeDescription(purposeArea.getText().trim());
             booking.setBookingStatus("PENDING");
@@ -475,7 +501,7 @@ public class BorrowerPortal {
             formTitle, formSubtitle,
             new Separator(),
             equipLabel, equipmentBox,
-            startLabel, startDate,
+            startLabel, startTimeBox,
             returnLabel, returnDate,
             purposeLabel, purposeArea,
             feedbackLabel,

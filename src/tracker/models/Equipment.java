@@ -2,6 +2,7 @@ package tracker.models;
 
 public class Equipment {
     private int equipmentId;
+    private String equipmentName;
     private String serialNumber;
     private int categoryId;
     private String technicalSpecifications;
@@ -9,12 +10,15 @@ public class Equipment {
     private double purchaseCost;
     private String purchaseDate;
     private String equipmentStatus; // AVAILABLE, BORROWED, IN_MAINTENANCE
-    private Integer assignedTo; // null if not assigned
+    private String assignedTo; // Just a string now, not a user ID
 
     public Equipment() {}
 
     public int getEquipmentId() { return equipmentId; }
     public void setEquipmentId(int equipmentId) { this.equipmentId = equipmentId; }
+
+    public String getEquipmentName() { return equipmentName; }
+    public void setEquipmentName(String equipmentName) { this.equipmentName = equipmentName; }
 
     public String getSerialNumber() { return serialNumber; }
     public void setSerialNumber(String serialNumber) { this.serialNumber = serialNumber; }
@@ -37,8 +41,8 @@ public class Equipment {
     public String getEquipmentStatus() { return equipmentStatus; }
     public void setEquipmentStatus(String equipmentStatus) { this.equipmentStatus = equipmentStatus; }
 
-    public Integer getAssignedTo() { return assignedTo; }
-    public void setAssignedTo(Integer assignedTo) { this.assignedTo = assignedTo; }
+    public String getAssignedTo() { return assignedTo; }
+    public void setAssignedTo(String assignedTo) { this.assignedTo = assignedTo; }
     
     @Override
     public String toString() {

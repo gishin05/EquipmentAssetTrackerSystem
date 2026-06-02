@@ -49,15 +49,6 @@ public class LoginScreen {
         loginCard.setMaxWidth(440);
         loginCard.setMaxHeight(Region.USE_PREF_SIZE);
 
-        // Icon
-        Label icon = new Label("\u26A1");
-        icon.getStyleClass().add("login-icon");
-        icon.setAlignment(Pos.CENTER);
-
-        // Title
-        Label title = new Label("Welcome Back");
-        title.getStyleClass().add("login-title");
-
         // Subtitle
         Label subtitle = new Label("Sign in to Equipment Asset Tracker");
         subtitle.getStyleClass().add("login-subtitle");
@@ -109,7 +100,7 @@ public class LoginScreen {
         footerText.setAlignment(Pos.CENTER);
 
         loginCard.getChildren().addAll(
-            icon, title, subtitle,
+            subtitle,
             spacer1,
             usernameLabel, usernameField,
             spacer2,

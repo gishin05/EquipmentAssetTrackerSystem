@@ -40,6 +40,7 @@ public class AdminDashboard {
     private MaintenanceDAO maintenanceDAO = new MaintenanceDAO();
     private AuditDAO auditDAO = new AuditDAO();
     private CategoryDAO categoryDAO = new CategoryDAO();
+    private ChangeLogDAO changeLogDAO = new ChangeLogDAO();
 
     /**
      * Create the admin dashboard.
@@ -96,14 +97,6 @@ public class AdminDashboard {
         header.setAlignment(Pos.CENTER_LEFT);
         header.setPadding(new Insets(12, 32, 12, 32));
 
-        // Brand Label
-        Label brandLabel = new Label("⚡ EAT System");
-        brandLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: -text-primary; -fx-padding: 0 10 0 0;");
-
-        // Vertical Separator
-        Separator brandSep = new Separator(javafx.geometry.Orientation.VERTICAL);
-        brandSep.setStyle("-fx-padding: 0 5 0 5;");
-
         // Horizontal Nav Container
         navBtnContainer = new HBox(10);
         navBtnContainer.setAlignment(Pos.CENTER_LEFT);
@@ -136,7 +129,7 @@ public class AdminDashboard {
         logoutBtn.setId("admin-logout");
         logoutBtn.setOnAction(e -> mainApp.showLoginScreen());
 
-        header.getChildren().addAll(brandLabel, brandSep, navBtnContainer, spacer, userLabel, userName, roleBadge, logoutBtn);
+        header.getChildren().addAll(navBtnContainer, spacer, userLabel, userName, roleBadge, logoutBtn);
         return header;
     }
 
@@ -354,7 +347,7 @@ public class AdminDashboard {
             .collect(Collectors.toMap(Category::getCategoryId, Category::getCategoryName, (a, b) -> a));
 
         TableColumn<Equipment, String> colName = new TableColumn<>("Name");
-        colName.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getSerialNumber()));
+        colName.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getEquipmentName()));
 
         TableColumn<Equipment, String> colCategory = new TableColumn<>("Category");
         colCategory.setCellValueFactory(c -> {
@@ -478,14 +471,8 @@ public class AdminDashboard {
         String categoryName = categoryMap.getOrDefault(eq.getCategoryId(), "Unknown (" + eq.getCategoryId() + ")");
 
         String assignedUserName = "Not Assigned";
-        if (eq.getAssignedTo() != null) {
-            UserDAO userDAO = new UserDAO();
-            User user = userDAO.getUserById(eq.getAssignedTo());
-            if (user != null) {
-                assignedUserName = user.getUsername() + " (ID: " + user.getUserId() + ")";
-            } else {
-                assignedUserName = "User ID: " + eq.getAssignedTo();
-            }
+        if (eq.getAssignedTo() != null && !eq.getAssignedTo().isEmpty()) {
+            assignedUserName = eq.getAssignedTo();
         }
 
         VBox content = new VBox(20);
@@ -507,7 +494,8 @@ public class AdminDashboard {
 
         int row = 0;
         addDetailRow(grid, row++, "Asset ID", String.valueOf(eq.getEquipmentId()));
-        addDetailRow(grid, row++, "Asset Name / Serial", eq.getSerialNumber());
+        addDetailRow(grid, row++, "Name", eq.getEquipmentName() != null ? eq.getEquipmentName() : "N/A");
+        addDetailRow(grid, row++, "Serial Number", eq.getSerialNumber());
         addDetailRow(grid, row++, "Category", categoryName);
 
         // Status badge
@@ -612,6 +600,9 @@ public class AdminDashboard {
         grid.setVgap(14);
         grid.setPadding(new Insets(24));
 
+        TextField nameField = new TextField();
+        nameField.setPromptText("Equipment Name");
+
         TextField serialField = new TextField();
         serialField.setPromptText("Serial Number");
 
@@ -634,12 +625,14 @@ public class AdminDashboard {
         TextField costField = new TextField();
         costField.setPromptText("Purchase Cost");
 
-        TextField dateField = new TextField();
-        dateField.setPromptText("YYYY-MM-DD");
+        DatePicker datePicker = new DatePicker();
+        datePicker.setValue(java.time.LocalDate.now());
+        datePicker.setMaxWidth(Double.MAX_VALUE);
 
         TextField assignedToField = new TextField();
-        assignedToField.setPromptText("User ID (Optional)");
+        assignedToField.setPromptText("Assigned To (Optional)");
 
+        Label lbl0 = new Label("Name");            lbl0.getStyleClass().add("form-label");
         Label lbl1 = new Label("Serial Number");  lbl1.getStyleClass().add("form-label");
         Label lbl2 = new Label("Category");        lbl2.getStyleClass().add("form-label");
         Label lbl3 = new Label("Specifications");  lbl3.getStyleClass().add("form-label");
@@ -648,19 +641,21 @@ public class AdminDashboard {
         Label lbl6 = new Label("Purchase Date");   lbl6.getStyleClass().add("form-label");
         Label lbl7 = new Label("Assigned To");     lbl7.getStyleClass().add("form-label");
 
-        grid.addRow(0, lbl1, serialField);
-        grid.addRow(1, lbl2, categoryBox);
-        grid.addRow(2, lbl3, specsField);
-        grid.addRow(3, lbl4, locationField);
-        grid.addRow(4, lbl5, costField);
-        grid.addRow(5, lbl6, dateField);
-        grid.addRow(6, lbl7, assignedToField);
+        grid.addRow(0, lbl0, nameField);
+        grid.addRow(1, lbl1, serialField);
+        grid.addRow(2, lbl2, categoryBox);
+        grid.addRow(3, lbl3, specsField);
+        grid.addRow(4, lbl4, locationField);
+        grid.addRow(5, lbl5, costField);
+        grid.addRow(6, lbl6, datePicker);
+        grid.addRow(7, lbl7, assignedToField);
 
         dialogPane.setContent(grid);
 
         dialog.setResultConverter(button -> {
             if (button == ButtonType.OK) {
                 Equipment eq = new Equipment();
+                eq.setEquipmentName(nameField.getText());
                 eq.setSerialNumber(serialField.getText());
                 String catName = categoryBox.getValue();
                 int catId = 0;
@@ -675,16 +670,15 @@ public class AdminDashboard {
                 } catch (NumberFormatException ex) {
                     eq.setPurchaseCost(0);
                 }
-                eq.setPurchaseDate(dateField.getText());
+                String dateStr = datePicker.getValue() != null ? datePicker.getValue().toString() : java.time.LocalDate.now().toString();
+                eq.setPurchaseDate(dateStr);
                 eq.setEquipmentStatus("AVAILABLE");
                 
                 String assignedTxt = assignedToField.getText().trim();
                 if (!assignedTxt.isEmpty()) {
-                    try {
-                        eq.setAssignedTo(Integer.parseInt(assignedTxt));
-                    } catch (NumberFormatException ex) {
-                        eq.setAssignedTo(null);
-                    }
+                    eq.setAssignedTo(assignedTxt);
+                } else {
+                    eq.setAssignedTo(null);
                 }
                 
                 return eq;
@@ -694,7 +688,18 @@ public class AdminDashboard {
 
         dialog.showAndWait().ifPresent(eq -> {
             if (equipmentDAO.addEquipment(eq)) {
-                data.setAll(equipmentDAO.getAllEquipment());
+                // Log the addition as a change
+                List<Equipment> refreshed = equipmentDAO.getAllEquipment();
+                // Find the newly added equipment by serial number
+                Equipment added = refreshed.stream()
+                    .filter(e -> e.getSerialNumber() != null && e.getSerialNumber().equals(eq.getSerialNumber()))
+                    .findFirst().orElse(null);
+                if (added != null) {
+                    changeLogDAO.logChange("Inventory", added.getEquipmentId(), added.getEquipmentName(),
+                        "New Equipment Added", "—", "Serial: " + added.getSerialNumber() + ", Status: " + added.getEquipmentStatus(),
+                        currentUser.getUserId());
+                }
+                data.setAll(refreshed);
                 showInventory(); // Refresh stats too
             }
         });
@@ -832,16 +837,25 @@ public class AdminDashboard {
                     if ("PENDING".equals(booking.getBookingStatus())) {
                         approveBtn.setOnAction(e -> {
                             bookingDAO.updateBookingStatus(booking.getBookingId(), "APPROVED", currentUser.getUserId(), null);
+                            changeLogDAO.logChange("Booking", booking.getBookingId(),
+                                "Booking #" + booking.getBookingId(),
+                                "Status", "PENDING", "APPROVED", currentUser.getUserId());
                             showLoanApprovals();
                         });
                         rejectBtn.setOnAction(e -> {
                             bookingDAO.updateBookingStatus(booking.getBookingId(), "REJECTED", currentUser.getUserId(), "Rejected by admin");
+                            changeLogDAO.logChange("Booking", booking.getBookingId(),
+                                "Booking #" + booking.getBookingId(),
+                                "Status", "PENDING", "REJECTED", currentUser.getUserId());
                             showLoanApprovals();
                         });
                         setGraphic(actionBox);
                     } else if ("APPROVED".equals(booking.getBookingStatus())) {
                         returnBtn.setOnAction(e -> {
                             showReturnDialog(booking);
+                            changeLogDAO.logChange("Booking", booking.getBookingId(),
+                                "Booking #" + booking.getBookingId(),
+                                "Status", "APPROVED", "RETURNED", currentUser.getUserId());
                         });
                         setGraphic(returnBox);
                     } else {
@@ -972,7 +986,7 @@ public class AdminDashboard {
         equipmentBox.setConverter(new javafx.util.StringConverter<Equipment>() {
             @Override
             public String toString(Equipment eq) {
-                return eq == null ? "" : eq.getSerialNumber();
+                return eq == null ? "" : (eq.getEquipmentName() + " (" + eq.getTechnicalSpecifications() + ")");
             }
 
             @Override
@@ -980,8 +994,13 @@ public class AdminDashboard {
                 if (string == null || string.trim().isEmpty()) {
                     return null;
                 }
+                String trimmed = string.trim();
                 return availableEquip.stream()
-                    .filter(eq -> eq.getSerialNumber().equalsIgnoreCase(string.trim()))
+                    .filter(eq -> {
+                        String fullDisplay = eq.getEquipmentName() + " (" + eq.getTechnicalSpecifications() + ")";
+                        return fullDisplay.equalsIgnoreCase(trimmed) || 
+                               (eq.getEquipmentName() != null && eq.getEquipmentName().equalsIgnoreCase(trimmed));
+                    })
                     .findFirst()
                     .orElse(null);
             }
@@ -994,7 +1013,7 @@ public class AdminDashboard {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText(item.getSerialNumber() + " (" + item.getTechnicalSpecifications() + ")");
+                    setText(item.getEquipmentName() + " (" + item.getTechnicalSpecifications() + ")");
                 }
             }
         });
@@ -1005,12 +1024,18 @@ public class AdminDashboard {
                 equipmentBox.hide();
             } else {
                 Equipment selected = equipmentBox.getSelectionModel().getSelectedItem();
-                if (selected != null && selected.getSerialNumber().equalsIgnoreCase(newVal.trim())) {
-                    return;
+                String trimmed = newVal.trim();
+                if (selected != null) {
+                    String fullDisplay = selected.getEquipmentName() + " (" + selected.getTechnicalSpecifications() + ")";
+                    if (fullDisplay.equalsIgnoreCase(trimmed) || 
+                        (selected.getEquipmentName() != null && selected.getEquipmentName().equalsIgnoreCase(trimmed))) {
+                        return;
+                    }
                 }
                 ObservableList<Equipment> filteredList = FXCollections.observableArrayList();
                 for (Equipment eq : originalList) {
-                    if (eq.getSerialNumber().toLowerCase().contains(newVal.toLowerCase()) ||
+                    if ((eq.getEquipmentName() != null && eq.getEquipmentName().toLowerCase().contains(newVal.toLowerCase())) ||
+                        (eq.getSerialNumber() != null && eq.getSerialNumber().toLowerCase().contains(newVal.toLowerCase())) ||
                         (eq.getTechnicalSpecifications() != null && eq.getTechnicalSpecifications().toLowerCase().contains(newVal.toLowerCase()))) {
                         filteredList.add(eq);
                     }
@@ -1069,7 +1094,11 @@ public class AdminDashboard {
                 if (selectedEquip == null) {
                     String enteredText = equipmentBox.getEditor().getText().trim();
                     selectedEquip = availableEquip.stream()
-                        .filter(eq -> eq.getSerialNumber().equalsIgnoreCase(enteredText))
+                        .filter(eq -> {
+                            String fullDisplay = eq.getEquipmentName() + " (" + eq.getTechnicalSpecifications() + ")";
+                            return fullDisplay.equalsIgnoreCase(enteredText) || 
+                                   (eq.getEquipmentName() != null && eq.getEquipmentName().equalsIgnoreCase(enteredText));
+                        })
                         .findFirst()
                         .orElse(null);
                 }
@@ -1123,7 +1152,11 @@ public class AdminDashboard {
                 if (selectedEquip == null) {
                     String enteredText = equipmentBox.getEditor().getText().trim();
                     selectedEquip = availableEquip.stream()
-                        .filter(eq -> eq.getSerialNumber().equalsIgnoreCase(enteredText))
+                        .filter(eq -> {
+                            String fullDisplay = eq.getEquipmentName() + " (" + eq.getTechnicalSpecifications() + ")";
+                            return fullDisplay.equalsIgnoreCase(enteredText) || 
+                                   (eq.getEquipmentName() != null && eq.getEquipmentName().equalsIgnoreCase(enteredText));
+                        })
                         .findFirst()
                         .orElse(null);
                 }
@@ -1138,6 +1171,19 @@ public class AdminDashboard {
 
         dialog.showAndWait().ifPresent(b -> {
             if (bookingDAO.addBooking(b)) {
+                // Log the new booking as a change
+                List<Booking> allBookings = bookingDAO.getAllBookings();
+                Booking newest = allBookings.isEmpty() ? null : allBookings.get(allBookings.size() - 1);
+                if (newest != null) {
+                    String equipName = equipmentDAO.getEquipmentById(b.getEquipmentId()) != null
+                        ? equipmentDAO.getEquipmentById(b.getEquipmentId()).getEquipmentName()
+                        : "Equipment #" + b.getEquipmentId();
+                    changeLogDAO.logChange("Booking", newest.getBookingId(),
+                        "Booking #" + newest.getBookingId(),
+                        "New Booking Added", "—",
+                        "Equipment: " + equipName + ", Status: " + b.getBookingStatus(),
+                        currentUser.getUserId());
+                }
                 showLoanApprovals();
             }
         });
@@ -1337,23 +1383,25 @@ public class AdminDashboard {
     }
 
     // ═══════════════════════════════════════════════════════════
-    //  LOGS PANEL
+    //  LOGS PANEL  (with Inventory / Booking sub-header tabs)
     // ═══════════════════════════════════════════════════════════
+
+    private Button activeLogTabBtn; // tracks the active sub-header button
 
     @SuppressWarnings("unchecked")
     private void showAuditLogs() {
         headerTitle.setText("Logs");
         contentArea.getChildren().clear();
 
-        VBox panel = new VBox(20);
+        VBox panel = new VBox(0);
         panel.setPadding(new Insets(0));
 
-        // Toolbar
+        // ── Toolbar row ──
         HBox toolbar = new HBox(12);
         toolbar.getStyleClass().add("action-toolbar");
         toolbar.setAlignment(Pos.CENTER_LEFT);
 
-        Label subtitle = new Label("System activity and change history");
+        Label subtitle = new Label("Track every change made to your data");
         subtitle.getStyleClass().add("content-subtitle");
 
         Region spacer = new Region();
@@ -1364,66 +1412,191 @@ public class AdminDashboard {
         exportBtn.setId("export-data");
         exportBtn.setOnAction(e -> showExportDialog());
 
-        Button refreshBtn = new Button("\u21BB Refresh");
+        Button refreshBtn = new Button("↻ Refresh");
         refreshBtn.getStyleClass().add("button");
         refreshBtn.setOnAction(e -> showAuditLogs());
 
         toolbar.getChildren().addAll(subtitle, spacer, exportBtn, refreshBtn);
 
+        // ── Sub-header tab bar (Inventory | Booking) ──
+        HBox tabBar = new HBox(0);
+        tabBar.getStyleClass().add("log-tab-bar");
+        tabBar.setAlignment(Pos.CENTER_LEFT);
+
+        // Container for the table that changes based on selected tab
+        VBox tableContainer = new VBox();
+        VBox.setVgrow(tableContainer, Priority.ALWAYS);
+
+        Button tabInventory = new Button("📦  Inventory");
+        tabInventory.getStyleClass().add("log-tab-btn");
+        tabInventory.setId("log-tab-inventory");
+
+        Button tabBooking = new Button("📄  Booking");
+        tabBooking.getStyleClass().add("log-tab-btn");
+        tabBooking.setId("log-tab-booking");
+
+        tabInventory.setOnAction(e -> {
+            setActiveLogTab(tabInventory);
+            showChangeLogTable(tableContainer, "Inventory");
+        });
+
+        tabBooking.setOnAction(e -> {
+            setActiveLogTab(tabBooking);
+            showChangeLogTable(tableContainer, "Booking");
+        });
+
+        tabBar.getChildren().addAll(tabInventory, tabBooking);
+
+        // Default: select Inventory tab
+        setActiveLogTab(tabInventory);
+
+        panel.getChildren().addAll(toolbar, tabBar, tableContainer);
+        contentArea.getChildren().add(panel);
+        StackPane.setAlignment(panel, Pos.TOP_LEFT);
+
+        // Show Inventory logs by default
+        showChangeLogTable(tableContainer, "Inventory");
+    }
+
+    /**
+     * Highlights the active sub-header tab button.
+     */
+    private void setActiveLogTab(Button btn) {
+        if (activeLogTabBtn != null) {
+            activeLogTabBtn.getStyleClass().remove("log-tab-btn-active");
+        }
+        btn.getStyleClass().add("log-tab-btn-active");
+        activeLogTabBtn = btn;
+    }
+
+    /**
+     * Populates the table container with change-log rows for the given table name.
+     */
+    @SuppressWarnings("unchecked")
+    private void showChangeLogTable(VBox container, String tableName) {
+        container.getChildren().clear();
+
+        // Fetch change logs
+        List<ChangeLog> logs = changeLogDAO.getChangeLogsByTable(tableName);
+
+        // Search / filter bar
+        HBox filterBar = new HBox(12);
+        filterBar.setAlignment(Pos.CENTER_LEFT);
+        filterBar.setPadding(new Insets(16, 0, 12, 0));
+
+        TextField searchField = new TextField();
+        searchField.setPromptText("\uD83D\uDD0D Search changes...");
+        searchField.getStyleClass().add("search-field");
+        searchField.setMinWidth(300);
+
+        Label countLabel = new Label(logs.size() + " change" + (logs.size() != 1 ? "s" : "") + " recorded");
+        countLabel.setStyle("-fx-text-fill: -text-muted; -fx-font-size: 13px;");
+
+        Region filterSpacer = new Region();
+        HBox.setHgrow(filterSpacer, Priority.ALWAYS);
+
+        filterBar.getChildren().addAll(searchField, filterSpacer, countLabel);
+
         // Table
-        TableView<AuditLog> table = new TableView<>();
-        table.setId("audit-table");
+        TableView<ChangeLog> table = new TableView<>();
+        table.setId("changelog-table-" + tableName.toLowerCase());
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         VBox.setVgrow(table, Priority.ALWAYS);
-        table.setMinHeight(500);
+        table.setMinHeight(450);
 
-        TableColumn<AuditLog, Integer> colId = new TableColumn<>("Audit ID");
-        colId.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getAuditId()).asObject());
-        colId.setMaxWidth(90);
+        TableColumn<ChangeLog, String> colName = new TableColumn<>("Name");
+        colName.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getRecordName()));
+        colName.setMinWidth(160);
 
-        TableColumn<AuditLog, String> colAction = new TableColumn<>("Action");
-        colAction.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getActionType()));
-        colAction.setCellFactory(col -> new TableCell<>() {
+        TableColumn<ChangeLog, String> colField = new TableColumn<>("Field Changed");
+        colField.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getFieldName()));
+        colField.setMinWidth(140);
+
+        TableColumn<ChangeLog, String> colEdited = new TableColumn<>("Edited Into");
+        colEdited.setCellValueFactory(c -> {
+            String oldVal = c.getValue().getOldValue();
+            String newVal = c.getValue().getNewValue();
+            String display = (oldVal != null && !oldVal.isEmpty() && !"—".equals(oldVal))
+                ? oldVal + "  →  " + newVal
+                : newVal;
+            return new SimpleStringProperty(display);
+        });
+        colEdited.setMinWidth(250);
+        colEdited.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
-                    setGraphic(null);
                     setText(null);
+                    setGraphic(null);
+                } else {
+                    Label lbl = new Label(item);
+                    if (item.contains("→")) {
+                        lbl.setStyle("-fx-text-fill: #ffd166; -fx-font-size: 13px;");
+                    } else {
+                        lbl.setStyle("-fx-text-fill: #06d6a0; -fx-font-size: 13px;");
+                    }
+                    lbl.setWrapText(true);
+                    setGraphic(lbl);
+                    setText(null);
+                }
+            }
+        });
+
+        TableColumn<ChangeLog, String> colTime = new TableColumn<>("Time Changed");
+        colTime.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getChangeTimestamp()));
+        colTime.setMinWidth(180);
+
+        TableColumn<ChangeLog, String> colUser = new TableColumn<>("Changed By");
+        colUser.setCellValueFactory(c -> {
+            String username = c.getValue().getUsername();
+            return new SimpleStringProperty(username != null ? username : "User #" + c.getValue().getUserId());
+        });
+        colUser.setMinWidth(130);
+        colUser.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
                 } else {
                     Label badge = new Label(item);
-                    badge.getStyleClass().add("badge");
-                    switch (item.toUpperCase()) {
-                        case "INSERT": badge.getStyleClass().add("badge-approved"); break;
-                        case "UPDATE": badge.getStyleClass().add("badge-pending"); break;
-                        case "DELETE": badge.getStyleClass().add("badge-rejected"); break;
-                        default:       badge.getStyleClass().add("badge-pending");
-                    }
+                    badge.setStyle(
+                        "-fx-background-color: rgba(67,97,238,0.12); -fx-text-fill: #7b93f5; " +
+                        "-fx-padding: 4 12; -fx-background-radius: 14; -fx-font-size: 12px; -fx-font-weight: bold;"
+                    );
                     setGraphic(badge);
                     setText(null);
                 }
             }
         });
 
-        TableColumn<AuditLog, String> colTable = new TableColumn<>("Affected Table");
-        colTable.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getAffectedTable()));
+        table.getColumns().addAll(colName, colField, colEdited, colTime, colUser);
 
-        TableColumn<AuditLog, Integer> colRecord = new TableColumn<>("Record ID");
-        colRecord.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getRecordId()).asObject());
+        ObservableList<ChangeLog> data = FXCollections.observableArrayList(logs);
+        FilteredList<ChangeLog> filteredData = new FilteredList<>(data, p -> true);
+        table.setItems(filteredData);
 
-        TableColumn<AuditLog, String> colTimestamp = new TableColumn<>("Timestamp");
-        colTimestamp.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getActionTimestamp()));
-        colTimestamp.setMinWidth(200);
+        // Empty state placeholder
+        Label placeholder = new Label("No changes recorded for " + tableName + " yet.");
+        placeholder.setStyle("-fx-text-fill: -text-muted; -fx-font-size: 14px;");
+        table.setPlaceholder(placeholder);
 
-        TableColumn<AuditLog, Integer> colUser = new TableColumn<>("User ID");
-        colUser.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getUserId()).asObject());
+        // Search filter
+        searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+            filteredData.setPredicate(cl -> {
+                if (newVal == null || newVal.isEmpty()) return true;
+                String lower = newVal.toLowerCase();
+                return (cl.getRecordName() != null && cl.getRecordName().toLowerCase().contains(lower))
+                    || (cl.getFieldName() != null && cl.getFieldName().toLowerCase().contains(lower))
+                    || (cl.getNewValue() != null && cl.getNewValue().toLowerCase().contains(lower))
+                    || (cl.getOldValue() != null && cl.getOldValue().toLowerCase().contains(lower))
+                    || (cl.getUsername() != null && cl.getUsername().toLowerCase().contains(lower));
+            });
+        });
 
-        table.getColumns().addAll(colId, colAction, colTable, colRecord, colTimestamp, colUser);
-        table.setItems(FXCollections.observableArrayList(auditDAO.getAllAuditLogs()));
-
-        panel.getChildren().addAll(toolbar, table);
-        contentArea.getChildren().add(panel);
-        StackPane.setAlignment(panel, Pos.TOP_LEFT);
+        container.getChildren().addAll(filterBar, table);
     }
 
     // ═══════════════════════════════════════════════════════════

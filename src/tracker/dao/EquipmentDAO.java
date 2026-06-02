@@ -25,7 +25,7 @@ public class EquipmentDAO {
     }
     
     public boolean addEquipment(Equipment equipment) {
-        String query = "INSERT INTO equipment (serial_number, category_id, technical_specifications, storage_location, purchase_cost, purchase_date, equipment_status, assigned_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO equipment (equipment_name, serial_number, category_id, technical_specifications, storage_location, purchase_cost, purchase_date, equipment_status, assigned_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             
@@ -38,12 +38,12 @@ public class EquipmentDAO {
     }
     
     public boolean updateEquipment(Equipment equipment) {
-        String query = "UPDATE equipment SET serial_number = ?, category_id = ?, technical_specifications = ?, storage_location = ?, purchase_cost = ?, purchase_date = ?, equipment_status = ?, assigned_to = ? WHERE equipment_id = ?";
+        String query = "UPDATE equipment SET equipment_name = ?, serial_number = ?, category_id = ?, technical_specifications = ?, storage_location = ?, purchase_cost = ?, purchase_date = ?, equipment_status = ?, assigned_to = ? WHERE equipment_id = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             
             setEquipmentParams(pstmt, equipment);
-            pstmt.setInt(9, equipment.getEquipmentId());
+            pstmt.setInt(10, equipment.getEquipmentId());
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -68,23 +68,25 @@ public class EquipmentDAO {
     }
     
     private void setEquipmentParams(PreparedStatement pstmt, Equipment equipment) throws SQLException {
-        pstmt.setString(1, equipment.getSerialNumber());
-        pstmt.setInt(2, equipment.getCategoryId());
-        pstmt.setString(3, equipment.getTechnicalSpecifications());
-        pstmt.setString(4, equipment.getStorageLocation());
-        pstmt.setDouble(5, equipment.getPurchaseCost());
-        pstmt.setString(6, equipment.getPurchaseDate());
-        pstmt.setString(7, equipment.getEquipmentStatus());
-        if (equipment.getAssignedTo() != null) {
-            pstmt.setInt(8, equipment.getAssignedTo());
+        pstmt.setString(1, equipment.getEquipmentName());
+        pstmt.setString(2, equipment.getSerialNumber());
+        pstmt.setInt(3, equipment.getCategoryId());
+        pstmt.setString(4, equipment.getTechnicalSpecifications());
+        pstmt.setString(5, equipment.getStorageLocation());
+        pstmt.setDouble(6, equipment.getPurchaseCost());
+        pstmt.setString(7, equipment.getPurchaseDate());
+        pstmt.setString(8, equipment.getEquipmentStatus());
+        if (equipment.getAssignedTo() != null && !equipment.getAssignedTo().trim().isEmpty()) {
+            pstmt.setString(9, equipment.getAssignedTo());
         } else {
-            pstmt.setNull(8, Types.INTEGER);
+            pstmt.setNull(9, Types.VARCHAR);
         }
     }
     
     private Equipment mapResultSetToEquipment(ResultSet rs) throws SQLException {
         Equipment e = new Equipment();
         e.setEquipmentId(rs.getInt("equipment_id"));
+        e.setEquipmentName(rs.getString("equipment_name"));
         e.setSerialNumber(rs.getString("serial_number"));
         e.setCategoryId(rs.getInt("category_id"));
         e.setTechnicalSpecifications(rs.getString("technical_specifications"));
@@ -93,7 +95,7 @@ public class EquipmentDAO {
         e.setPurchaseDate(rs.getString("purchase_date"));
         e.setEquipmentStatus(rs.getString("equipment_status"));
         
-        int assignedTo = rs.getInt("assigned_to");
+        String assignedTo = rs.getString("assigned_to");
         if (!rs.wasNull()) {
             e.setAssignedTo(assignedTo);
         }
