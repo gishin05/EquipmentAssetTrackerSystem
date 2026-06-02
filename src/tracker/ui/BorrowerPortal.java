@@ -12,6 +12,7 @@ import javafx.scene.layout.*;
 import tracker.Main;
 import tracker.dao.BookingDAO;
 import tracker.dao.EquipmentDAO;
+import tracker.dao.UserDAO;
 import tracker.models.Booking;
 import tracker.models.Equipment;
 import tracker.models.User;
@@ -22,7 +23,10 @@ import java.util.List;
 public class BorrowerPortal {
     private Main mainApp;
     private User currentUser;
-    private BorderPane view;
+    private StackPane rootView;
+    private BorderPane mainView;
+    private VBox sidePanel;
+    private boolean isLightMode = false;
     private StackPane contentArea;
     private HBox navBtnContainer;
     private Button activeNavBtn;
@@ -33,6 +37,7 @@ public class BorrowerPortal {
     // DAOs
     private BookingDAO bookingDAO = new BookingDAO();
     private EquipmentDAO equipmentDAO = new EquipmentDAO();
+    private UserDAO userDAO = new UserDAO();
 
     /**
      * Create the borrower portal.
@@ -43,16 +48,17 @@ public class BorrowerPortal {
         buildView();
     }
 
-    public BorderPane getView() {
-        return view;
+    public javafx.scene.Parent getView() {
+        return rootView;
     }
 
     private void buildView() {
-        view = new BorderPane();
+        rootView = new StackPane();
+        mainView = new BorderPane();
 
         // ── Header Navbar ──
         HBox header = buildHeader();
-        view.setTop(header);
+        mainView.setTop(header);
 
         // ── Main Content Container ──
         VBox mainContentLayout = new VBox(20);
@@ -73,7 +79,10 @@ public class BorrowerPortal {
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
         scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
-        view.setCenter(scrollPane);
+        mainView.setCenter(scrollPane);
+
+        buildSidePanel();
+        rootView.getChildren().addAll(mainView, sidePanel);
 
         // Show bookings by default
         showMyBookings();
@@ -104,23 +113,75 @@ public class BorrowerPortal {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Label userLabel = new Label("Logged in as  ");
-        userLabel.getStyleClass().add("header-user");
-
         Label userName = new Label(currentUser.getUsername());
-        userName.setStyle("-fx-text-fill: -text-primary; -fx-font-weight: bold; -fx-font-size: 13px;");
+        userName.setStyle("-fx-text-fill: -text-primary; -fx-font-weight: bold; -fx-font-size: 14px; -fx-cursor: hand;");
+        userName.setOnMouseClicked(e -> {
+            sidePanel.setVisible(!sidePanel.isVisible());
+            sidePanel.toFront();
+        });
 
         Label roleBadge = new Label("BORROWER");
         roleBadge.getStyleClass().add("header-role-badge");
         roleBadge.setStyle("-fx-background-color: rgba(6, 214, 160, 0.15); -fx-text-fill: #06d6a0;");
 
-        Button logoutBtn = new Button("Logout");
-        logoutBtn.getStyleClass().add("btn-logout");
-        logoutBtn.setId("borrower-logout");
-        logoutBtn.setOnAction(e -> mainApp.showLoginScreen());
-
-        header.getChildren().addAll(navBtnContainer, spacer, userLabel, userName, roleBadge, logoutBtn);
+        header.getChildren().addAll(navBtnContainer, spacer, userName, roleBadge);
         return header;
+    }
+
+    private void buildSidePanel() {
+        sidePanel = new VBox(10);
+        sidePanel.getStyleClass().add("side-panel");
+        sidePanel.setPrefWidth(220);
+        sidePanel.setMaxWidth(220);
+        sidePanel.setMaxHeight(Region.USE_PREF_SIZE);
+        StackPane.setAlignment(sidePanel, Pos.TOP_RIGHT);
+        StackPane.setMargin(sidePanel, new Insets(60, 20, 0, 0));
+        sidePanel.setVisible(false);
+
+        Label title = new Label(currentUser.getUsername());
+        title.getStyleClass().add("side-panel-title");
+
+        Label roleLbl = new Label("Role: BORROWER");
+        roleLbl.getStyleClass().add("side-panel-role");
+
+        Separator sep = new Separator();
+
+        Button themeBtn = new Button(isLightMode ? "🌙 Switch to Dark Mode" : "☀️ Switch to Light Mode");
+        themeBtn.getStyleClass().add("side-panel-btn");
+        themeBtn.setMaxWidth(Double.MAX_VALUE);
+        themeBtn.setOnAction(e -> {
+            isLightMode = !isLightMode;
+            if (isLightMode) {
+                rootView.getScene().getRoot().getStyleClass().add("light-theme");
+                themeBtn.setText("🌙 Switch to Dark Mode");
+            } else {
+                rootView.getScene().getRoot().getStyleClass().remove("light-theme");
+                themeBtn.setText("☀️ Switch to Light Mode");
+            }
+        });
+
+        Button changePwdBtn = new Button("🔑 Change Password");
+        changePwdBtn.getStyleClass().add("side-panel-btn");
+        changePwdBtn.setMaxWidth(Double.MAX_VALUE);
+        changePwdBtn.setOnAction(e -> {
+            sidePanel.setVisible(false);
+            showChangePasswordDialog();
+        });
+
+        Region spring = new Region();
+        spring.setMinHeight(20);
+
+        Button logoutBtn = new Button("Logout");
+        logoutBtn.getStyleClass().add("side-panel-btn-logout");
+        logoutBtn.setMaxWidth(Double.MAX_VALUE);
+        logoutBtn.setOnAction(e -> {
+            if (rootView.getScene() != null) {
+                rootView.getScene().getRoot().getStyleClass().remove("light-theme");
+            }
+            mainApp.showLoginScreen();
+        });
+
+        sidePanel.getChildren().addAll(title, roleLbl, sep, themeBtn, changePwdBtn, spring, logoutBtn);
     }
 
     private Button createNavButton(String text, Runnable action) {
@@ -180,7 +241,7 @@ public class BorrowerPortal {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button addBtn = new Button("+ Add Booking");
+        Button addBtn = new Button("Add");
         addBtn.getStyleClass().addAll("button", "btn-success");
         addBtn.setId("add-booking-borrower");
         addBtn.setOnAction(e -> {
@@ -274,6 +335,76 @@ public class BorrowerPortal {
         StackPane.setAlignment(panel, Pos.TOP_LEFT);
     }
 
+    private void showAlert(Alert.AlertType type, String title, String content) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.initOwner(mainApp.getPrimaryStage());
+        alert.showAndWait();
+    }
+
+    private void showChangePasswordDialog() {
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle("Change Password");
+        dialog.initOwner(mainApp.getPrimaryStage());
+
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.setStyle("-fx-background-color: -bg-card; -fx-border-color: -border; -fx-border-radius: 12; -fx-background-radius: 12;");
+        dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(16);
+        grid.setVgap(14);
+        grid.setPadding(new Insets(24));
+
+        PasswordField currentPwdField = new PasswordField();
+        currentPwdField.setPromptText("Current Password");
+        PasswordField newPwdField = new PasswordField();
+        newPwdField.setPromptText("New Password");
+        PasswordField confirmPwdField = new PasswordField();
+        confirmPwdField.setPromptText("Confirm New Password");
+
+        Label l1 = new Label("Current"); l1.getStyleClass().add("form-label");
+        Label l2 = new Label("New");     l2.getStyleClass().add("form-label");
+        Label l3 = new Label("Confirm"); l3.getStyleClass().add("form-label");
+
+        grid.addRow(0, l1, currentPwdField);
+        grid.addRow(1, l2, newPwdField);
+        grid.addRow(2, l3, confirmPwdField);
+
+        dialogPane.setContent(grid);
+
+        dialog.setResultConverter(button -> {
+            if (button == ButtonType.OK) {
+                String current = currentPwdField.getText();
+                String newPwd = newPwdField.getText();
+                String confirm = confirmPwdField.getText();
+
+                if (!currentUser.getPasswordHash().equals(current)) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Current password is incorrect!");
+                    return false;
+                }
+                if (newPwd.isEmpty() || !newPwd.equals(confirm)) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "New passwords do not match or are empty!");
+                    return false;
+                }
+                
+                boolean updated = userDAO.updatePassword(currentUser.getUserId(), newPwd);
+                if (updated) {
+                    currentUser = userDAO.getUserById(currentUser.getUserId());
+                    showAlert(Alert.AlertType.INFORMATION, "Success", "Password updated successfully!");
+                } else {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Failed to update password in database.");
+                }
+                return true;
+            }
+            return false;
+        });
+
+        dialog.showAndWait();
+    }
+
     private VBox buildStatCard(String value, String label, String color) {
         VBox card = new VBox(4);
         card.getStyleClass().add("stat-card");
@@ -312,6 +443,33 @@ public class BorrowerPortal {
 
         Label formSubtitle = new Label("Fill in the details below to request equipment borrowing");
         formSubtitle.getStyleClass().add("content-subtitle");
+
+        // Type selector
+        Label typeLabel = new Label("TYPE");
+        typeLabel.getStyleClass().add("form-label");
+        ComboBox<String> typeBox = new ComboBox<>();
+        typeBox.getItems().addAll("Borrow", "Reserve");
+        typeBox.setValue("Borrow");
+        typeBox.setMaxWidth(Double.MAX_VALUE);
+
+        // Cost
+        Label costLabel = new Label("COST (₱)");
+        costLabel.getStyleClass().add("form-label");
+        costLabel.setVisible(false);
+        costLabel.setManaged(false);
+
+        TextField costField = new TextField();
+        costField.setPromptText("Enter amount in PHP");
+        costField.setVisible(false);
+        costField.setManaged(false);
+
+        typeBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+            boolean isReserve = "Reserve".equals(newVal);
+            costLabel.setVisible(isReserve);
+            costLabel.setManaged(isReserve);
+            costField.setVisible(isReserve);
+            costField.setManaged(isReserve);
+        });
 
         // Equipment selector
         Label equipLabel = new Label("EQUIPMENT");
@@ -483,7 +641,16 @@ public class BorrowerPortal {
             
             booking.setExpectedReturnDatetime(returnDate.getValue().toString());
             booking.setPurposeDescription(purposeArea.getText().trim());
-            booking.setBookingStatus("PENDING");
+            if ("Reserve".equals(typeBox.getValue())) {
+                booking.setBookingStatus("QUEUE");
+                try {
+                    booking.setBorrowingPrice(Double.parseDouble(costField.getText().trim()));
+                } catch (NumberFormatException ex) {
+                    booking.setBorrowingPrice(0.0);
+                }
+            } else {
+                booking.setBookingStatus("PENDING");
+            }
 
             if (bookingDAO.addBooking(booking)) {
                 showFeedback(feedbackLabel, "\u2714 Booking submitted successfully! Awaiting admin approval.", "-success");
@@ -500,6 +667,8 @@ public class BorrowerPortal {
         formCard.getChildren().addAll(
             formTitle, formSubtitle,
             new Separator(),
+            typeLabel, typeBox,
+            costLabel, costField,
             equipLabel, equipmentBox,
             startLabel, startTimeBox,
             returnLabel, returnDate,
@@ -518,5 +687,75 @@ public class BorrowerPortal {
         label.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: " + colorVar + ";");
         label.setVisible(true);
         label.setManaged(true);
+    }
+
+    private void showAlert(Alert.AlertType type, String title, String content) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.initOwner(mainApp.getPrimaryStage());
+        alert.showAndWait();
+    }
+
+    private void showChangePasswordDialog() {
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle("Change Password");
+        dialog.initOwner(mainApp.getPrimaryStage());
+
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.setStyle("-fx-background-color: -bg-card; -fx-border-color: -border; -fx-border-radius: 12; -fx-background-radius: 12;");
+        dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(16);
+        grid.setVgap(14);
+        grid.setPadding(new Insets(24));
+
+        PasswordField currentPwdField = new PasswordField();
+        currentPwdField.setPromptText("Current Password");
+        PasswordField newPwdField = new PasswordField();
+        newPwdField.setPromptText("New Password");
+        PasswordField confirmPwdField = new PasswordField();
+        confirmPwdField.setPromptText("Confirm New Password");
+
+        Label l1 = new Label("Current"); l1.getStyleClass().add("form-label");
+        Label l2 = new Label("New");     l2.getStyleClass().add("form-label");
+        Label l3 = new Label("Confirm"); l3.getStyleClass().add("form-label");
+
+        grid.addRow(0, l1, currentPwdField);
+        grid.addRow(1, l2, newPwdField);
+        grid.addRow(2, l3, confirmPwdField);
+
+        dialogPane.setContent(grid);
+
+        dialog.setResultConverter(button -> {
+            if (button == ButtonType.OK) {
+                String current = currentPwdField.getText();
+                String newPwd = newPwdField.getText();
+                String confirm = confirmPwdField.getText();
+
+                if (!currentUser.getPasswordHash().equals(current)) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Current password is incorrect!");
+                    return false;
+                }
+                if (newPwd.isEmpty() || !newPwd.equals(confirm)) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "New passwords do not match or are empty!");
+                    return false;
+                }
+                
+                boolean updated = userDAO.updatePassword(currentUser.getUserId(), newPwd);
+                if (updated) {
+                    currentUser = userDAO.getUserById(currentUser.getUserId());
+                    showAlert(Alert.AlertType.INFORMATION, "Success", "Password updated successfully!");
+                } else {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Failed to update password in database.");
+                }
+                return true;
+            }
+            return false;
+        });
+
+        dialog.showAndWait();
     }
 }

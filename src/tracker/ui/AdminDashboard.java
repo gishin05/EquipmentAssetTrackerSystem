@@ -28,7 +28,10 @@ import java.util.List;
 public class AdminDashboard {
     private Main mainApp;
     private User currentUser;
-    private BorderPane view;
+    private StackPane rootView;
+    private BorderPane mainView;
+    private VBox sidePanel;
+    private boolean isLightMode = false;
     private StackPane contentArea;
     private HBox navBtnContainer;
     private Button activeNavBtn;
@@ -41,6 +44,7 @@ public class AdminDashboard {
     private AuditDAO auditDAO = new AuditDAO();
     private CategoryDAO categoryDAO = new CategoryDAO();
     private ChangeLogDAO changeLogDAO = new ChangeLogDAO();
+    private UserDAO userDAO = new UserDAO();
 
     /**
      * Create the admin dashboard.
@@ -51,16 +55,17 @@ public class AdminDashboard {
         buildView();
     }
 
-    public BorderPane getView() {
-        return view;
+    public javafx.scene.Parent getView() {
+        return rootView;
     }
 
     private void buildView() {
-        view = new BorderPane();
+        rootView = new StackPane();
+        mainView = new BorderPane();
 
         // ── Header Navbar ──
         HBox header = buildHeader();
-        view.setTop(header);
+        mainView.setTop(header);
 
         // ── Main Content Container ──
         VBox mainContentLayout = new VBox(20);
@@ -81,7 +86,10 @@ public class AdminDashboard {
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
         scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
-        view.setCenter(scrollPane);
+        mainView.setCenter(scrollPane);
+
+        buildSidePanel();
+        rootView.getChildren().addAll(mainView, sidePanel);
 
         // Show dashboard by default
         showDashboard();
@@ -115,22 +123,74 @@ public class AdminDashboard {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Label userLabel = new Label("Logged in as  ");
-        userLabel.getStyleClass().add("header-user");
-
         Label userName = new Label(currentUser.getUsername());
-        userName.setStyle("-fx-text-fill: -text-primary; -fx-font-weight: bold; -fx-font-size: 13px;");
+        userName.setStyle("-fx-text-fill: -text-primary; -fx-font-weight: bold; -fx-font-size: 14px; -fx-cursor: hand;");
+        userName.setOnMouseClicked(e -> {
+            sidePanel.setVisible(!sidePanel.isVisible());
+            sidePanel.toFront();
+        });
 
         Label roleBadge = new Label("ADMIN");
         roleBadge.getStyleClass().add("header-role-badge");
 
-        Button logoutBtn = new Button("Logout");
-        logoutBtn.getStyleClass().add("btn-logout");
-        logoutBtn.setId("admin-logout");
-        logoutBtn.setOnAction(e -> mainApp.showLoginScreen());
-
-        header.getChildren().addAll(navBtnContainer, spacer, userLabel, userName, roleBadge, logoutBtn);
+        header.getChildren().addAll(navBtnContainer, spacer, userName, roleBadge);
         return header;
+    }
+
+    private void buildSidePanel() {
+        sidePanel = new VBox(10);
+        sidePanel.getStyleClass().add("side-panel");
+        sidePanel.setPrefWidth(220);
+        sidePanel.setMaxWidth(220);
+        sidePanel.setMaxHeight(Region.USE_PREF_SIZE);
+        StackPane.setAlignment(sidePanel, Pos.TOP_RIGHT);
+        StackPane.setMargin(sidePanel, new Insets(60, 20, 0, 0));
+        sidePanel.setVisible(false);
+
+        Label title = new Label(currentUser.getUsername());
+        title.getStyleClass().add("side-panel-title");
+
+        Label roleLbl = new Label("Role: ADMIN");
+        roleLbl.getStyleClass().add("side-panel-role");
+
+        Separator sep = new Separator();
+
+        Button themeBtn = new Button(isLightMode ? "🌙 Switch to Dark Mode" : "☀️ Switch to Light Mode");
+        themeBtn.getStyleClass().add("side-panel-btn");
+        themeBtn.setMaxWidth(Double.MAX_VALUE);
+        themeBtn.setOnAction(e -> {
+            isLightMode = !isLightMode;
+            if (isLightMode) {
+                rootView.getScene().getRoot().getStyleClass().add("light-theme");
+                themeBtn.setText("🌙 Switch to Dark Mode");
+            } else {
+                rootView.getScene().getRoot().getStyleClass().remove("light-theme");
+                themeBtn.setText("☀️ Switch to Light Mode");
+            }
+        });
+
+        Button changePwdBtn = new Button("🔑 Change Password");
+        changePwdBtn.getStyleClass().add("side-panel-btn");
+        changePwdBtn.setMaxWidth(Double.MAX_VALUE);
+        changePwdBtn.setOnAction(e -> {
+            sidePanel.setVisible(false);
+            showChangePasswordDialog();
+        });
+
+        Region spring = new Region();
+        spring.setMinHeight(20);
+
+        Button logoutBtn = new Button("Logout");
+        logoutBtn.getStyleClass().add("side-panel-btn-logout");
+        logoutBtn.setMaxWidth(Double.MAX_VALUE);
+        logoutBtn.setOnAction(e -> {
+            if (rootView.getScene() != null) {
+                rootView.getScene().getRoot().getStyleClass().remove("light-theme");
+            }
+            mainApp.showLoginScreen();
+        });
+
+        sidePanel.getChildren().addAll(title, roleLbl, sep, themeBtn, changePwdBtn, spring, logoutBtn);
     }
 
     private Button createNavButton(String text, Runnable action) {
@@ -908,7 +968,7 @@ public class AdminDashboard {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button addBtn = new Button("+ Add Booking");
+        Button addBtn = new Button("Add");
         addBtn.getStyleClass().addAll("button", "btn-success");
         addBtn.setId("add-booking");
         addBtn.setOnAction(e -> showAddBookingDialog());
@@ -968,7 +1028,9 @@ public class AdminDashboard {
                     badge.getStyleClass().add("badge");
                     switch (item.toUpperCase()) {
                         case "PENDING":   badge.getStyleClass().add("badge-pending"); break;
+                        case "QUEUE":     badge.getStyleClass().add("badge-pending"); badge.setStyle("-fx-background-color: rgba(255,165,0,0.2); -fx-text-fill: #ffa500;"); break;
                         case "APPROVED":  badge.getStyleClass().add("badge-approved"); break;
+                        case "DECLINED":  
                         case "REJECTED":  badge.getStyleClass().add("badge-rejected"); break;
                         case "RETURNED":  badge.getStyleClass().add("badge-returned"); break;
                         default:          badge.getStyleClass().add("badge-pending");
@@ -986,6 +1048,10 @@ public class AdminDashboard {
             private final Button rejectBtn = new Button("Reject");
             private final HBox actionBox = new HBox(8, approveBtn, rejectBtn);
 
+            private final Button qApproveBtn = new Button("APPROVE");
+            private final Button qDeclineBtn = new Button("DECLINE");
+            private final HBox qActionBox = new HBox(8, qApproveBtn, qDeclineBtn);
+
             private final Button returnBtn = new Button("Return");
             private final HBox returnBox = new HBox(returnBtn);
 
@@ -995,6 +1061,12 @@ public class AdminDashboard {
                 rejectBtn.getStyleClass().addAll("button", "btn-danger");
                 rejectBtn.setStyle("-fx-padding: 6 16; -fx-font-size: 12px;");
                 actionBox.setAlignment(Pos.CENTER);
+
+                qApproveBtn.getStyleClass().addAll("button", "btn-success");
+                qApproveBtn.setStyle("-fx-padding: 6 16; -fx-font-size: 12px;");
+                qDeclineBtn.getStyleClass().addAll("button", "btn-danger");
+                qDeclineBtn.setStyle("-fx-padding: 6 16; -fx-font-size: 12px;");
+                qActionBox.setAlignment(Pos.CENTER);
 
                 returnBtn.getStyleClass().addAll("button", "btn-primary");
                 returnBtn.setStyle("-fx-padding: 6 16; -fx-font-size: 12px; -fx-background-color: linear-gradient(to right, #4361ee, #3a86ff); -fx-text-fill: white; -fx-cursor: hand;");
@@ -1024,6 +1096,22 @@ public class AdminDashboard {
                             showLoanApprovals();
                         });
                         setGraphic(actionBox);
+                    } else if ("QUEUE".equals(booking.getBookingStatus())) {
+                        qApproveBtn.setOnAction(e -> {
+                            bookingDAO.updateBookingStatus(booking.getBookingId(), "APPROVED", currentUser.getUserId(), null);
+                            changeLogDAO.logChange("Booking", booking.getBookingId(),
+                                "Booking #" + booking.getBookingId(),
+                                "Status", "QUEUE", "APPROVED", currentUser.getUserId());
+                            showLoanApprovals();
+                        });
+                        qDeclineBtn.setOnAction(e -> {
+                            bookingDAO.updateBookingStatus(booking.getBookingId(), "DECLINED", currentUser.getUserId(), "Declined reservation");
+                            changeLogDAO.logChange("Booking", booking.getBookingId(),
+                                "Booking #" + booking.getBookingId(),
+                                "Status", "QUEUE", "DECLINED", currentUser.getUserId());
+                            showLoanApprovals();
+                        });
+                        setGraphic(qActionBox);
                     } else if ("APPROVED".equals(booking.getBookingStatus())) {
                         returnBtn.setOnAction(e -> {
                             showReturnDialog(booking);
@@ -1235,17 +1323,43 @@ public class AdminDashboard {
         purposeField.setPromptText("Describe the booking purpose...");
         purposeField.setPrefRowCount(3);
 
+        ComboBox<String> typeBox = new ComboBox<>();
+        typeBox.getItems().addAll("Borrow", "Reserve");
+        typeBox.setValue("Borrow");
+        typeBox.setMaxWidth(Double.MAX_VALUE);
+
+        Label costLabel = new Label("Cost (₱)");
+        costLabel.getStyleClass().add("form-label");
+        costLabel.setVisible(false);
+        costLabel.setManaged(false);
+
+        TextField costField = new TextField();
+        costField.setPromptText("Enter amount in PHP");
+        costField.setVisible(false);
+        costField.setManaged(false);
+
+        typeBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+            boolean isReserve = "Reserve".equals(newVal);
+            costLabel.setVisible(isReserve);
+            costLabel.setManaged(isReserve);
+            costField.setVisible(isReserve);
+            costField.setManaged(isReserve);
+        });
+
+        Label lbl0 = new Label("Type");         lbl0.getStyleClass().add("form-label");
         Label lbl1 = new Label("Borrower");     lbl1.getStyleClass().add("form-label");
         Label lbl2 = new Label("Equipment");    lbl2.getStyleClass().add("form-label");
         Label lbl3 = new Label("Start Date");   lbl3.getStyleClass().add("form-label");
         Label lbl4 = new Label("Return Date");  lbl4.getStyleClass().add("form-label");
         Label lbl5 = new Label("Purpose");      lbl5.getStyleClass().add("form-label");
 
-        grid.addRow(0, lbl1, borrowerField);
-        grid.addRow(1, lbl2, equipmentBox);
-        grid.addRow(2, lbl3, startDate);
-        grid.addRow(3, lbl4, returnDate);
-        grid.addRow(4, lbl5, purposeField);
+        grid.addRow(0, lbl0, typeBox);
+        grid.addRow(1, costLabel, costField);
+        grid.addRow(2, lbl1, borrowerField);
+        grid.addRow(3, lbl2, equipmentBox);
+        grid.addRow(4, lbl3, startDate);
+        grid.addRow(5, lbl4, returnDate);
+        grid.addRow(6, lbl5, purposeField);
 
         dialogPane.setContent(grid);
 
@@ -1287,7 +1401,16 @@ public class AdminDashboard {
                 b.setStartDatetime(startDate.getValue() != null ? startDate.getValue().toString() : java.time.LocalDate.now().toString());
                 b.setExpectedReturnDatetime(returnDate.getValue() != null ? returnDate.getValue().toString() : java.time.LocalDate.now().plusDays(7).toString());
                 b.setPurposeDescription(purposeField.getText().trim());
-                b.setBookingStatus("APPROVED"); // Admins pre-approve
+                if ("Reserve".equals(typeBox.getValue())) {
+                    b.setBookingStatus("QUEUE");
+                    try {
+                        b.setBorrowingPrice(Double.parseDouble(costField.getText().trim()));
+                    } catch (NumberFormatException ex) {
+                        b.setBorrowingPrice(0.0);
+                    }
+                } else {
+                    b.setBookingStatus("APPROVED"); // Admins pre-approve
+                }
                 return b;
             }
             return null;
@@ -1418,6 +1541,7 @@ public class AdminDashboard {
         TableColumn<MaintenanceLog, Integer> colId = new TableColumn<>("ID");
         colId.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getLogId()).asObject());
         colId.setMaxWidth(70);
+        colId.setVisible(false);
 
         TableColumn<MaintenanceLog, String> colEquip = new TableColumn<>("Equipment Name");
         colEquip.setCellValueFactory(c -> {
@@ -1447,6 +1571,46 @@ public class AdminDashboard {
 
         TableColumn<MaintenanceLog, String> colEnd = new TableColumn<>("Completion Date");
         colEnd.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getCompletionDate()));
+        colEnd.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    MaintenanceLog mLog = getTableView().getItems().get(getIndex());
+                    if (item == null || item.trim().isEmpty() || "IN_PROGRESS".equals(mLog.getRepairStatus())) {
+                        Button btn = new Button("Returned");
+                        btn.getStyleClass().addAll("button", "btn-primary");
+                        btn.setStyle("-fx-padding: 4 12; -fx-font-size: 12px;");
+                        btn.setOnAction(e -> {
+                            String now = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+                            mLog.setCompletionDate(now);
+                            mLog.setRepairStatus("COMPLETED");
+                            
+                            maintenanceDAO.updateMaintenanceLog(mLog);
+                            
+                            Equipment eq = equipmentDAO.getEquipmentById(mLog.getEquipmentId());
+                            if (eq != null) {
+                                eq.setEquipmentStatus("AVAILABLE");
+                                equipmentDAO.updateEquipment(eq);
+                            }
+                            
+                            changeLogDAO.logChange("Maintenance", mLog.getLogId(), eq != null ? eq.getEquipmentName() : "Unknown",
+                                "Maintenance Completed", "—", "Returned on " + now, currentUser.getUserId());
+                            
+                            showMaintenance();
+                        });
+                        setGraphic(btn);
+                        setText(null);
+                    } else {
+                        setGraphic(null);
+                        setText(item);
+                    }
+                }
+            }
+        });
 
         TableColumn<MaintenanceLog, String> colStatus = new TableColumn<>("Status");
         colStatus.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getRepairStatus()));
@@ -2058,5 +2222,66 @@ public class AdminDashboard {
             "-fx-background-color: #1a1a2e; -fx-border-color: #2a2a45;"
         );
         alert.showAndWait();
+    }
+
+    private void showChangePasswordDialog() {
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle("Change Password");
+        dialog.initOwner(mainApp.getPrimaryStage());
+
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.setStyle("-fx-background-color: -bg-card; -fx-border-color: -border; -fx-border-radius: 12; -fx-background-radius: 12;");
+        dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(16);
+        grid.setVgap(14);
+        grid.setPadding(new Insets(24));
+
+        PasswordField currentPwdField = new PasswordField();
+        currentPwdField.setPromptText("Current Password");
+        PasswordField newPwdField = new PasswordField();
+        newPwdField.setPromptText("New Password");
+        PasswordField confirmPwdField = new PasswordField();
+        confirmPwdField.setPromptText("Confirm New Password");
+
+        Label l1 = new Label("Current"); l1.getStyleClass().add("form-label");
+        Label l2 = new Label("New");     l2.getStyleClass().add("form-label");
+        Label l3 = new Label("Confirm"); l3.getStyleClass().add("form-label");
+
+        grid.addRow(0, l1, currentPwdField);
+        grid.addRow(1, l2, newPwdField);
+        grid.addRow(2, l3, confirmPwdField);
+
+        dialogPane.setContent(grid);
+
+        dialog.setResultConverter(button -> {
+            if (button == ButtonType.OK) {
+                String current = currentPwdField.getText();
+                String newPwd = newPwdField.getText();
+                String confirm = confirmPwdField.getText();
+
+                if (!currentUser.getPasswordHash().equals(current)) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Current password is incorrect!");
+                    return false;
+                }
+                if (newPwd.isEmpty() || !newPwd.equals(confirm)) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "New passwords do not match or are empty!");
+                    return false;
+                }
+                
+                boolean updated = userDAO.updatePassword(currentUser.getUserId(), newPwd);
+                if (updated) {
+                    currentUser = userDAO.getUserById(currentUser.getUserId());
+                    showAlert(Alert.AlertType.INFORMATION, "Success", "Password updated successfully!");
+                } else {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Failed to update password in database.");
+                }
+                return true;
+            }
+            return false;
+        });
+
+        dialog.showAndWait();
     }
 }

@@ -54,6 +54,8 @@ public class BookingDAO {
             boolean ok = pstmt.executeUpdate() > 0;
             if (ok && "APPROVED".equals(b.getBookingStatus())) {
                 updateEquipmentStatus(b.getEquipmentId(), "BORROWED");
+            } else if (ok && "RESERVED".equals(b.getBookingStatus())) {
+                updateEquipmentStatus(b.getEquipmentId(), "RESERVED");
             }
             return ok;
         } catch (SQLException e) {

@@ -124,4 +124,17 @@ public class UserDAO {
         }
         return null;
     }
+
+    public boolean updatePassword(int userId, String newPasswordHash) {
+        String query = "UPDATE users SET password_hash = ? WHERE user_id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setString(1, newPasswordHash);
+            pstmt.setInt(2, userId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }
