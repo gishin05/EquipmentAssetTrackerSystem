@@ -528,7 +528,44 @@ public class AdminDashboard {
         addDetailRow(grid, row++, "Purchase Date", eq.getPurchaseDate() != null ? eq.getPurchaseDate() : "N/A");
         addDetailRow(grid, row++, "Assigned Into:", assignedUserName);
 
-        content.getChildren().addAll(titleLbl, subtitleLbl, sep, grid);
+        // Action Buttons
+        HBox actionBox = new HBox(12);
+        actionBox.setAlignment(Pos.CENTER_RIGHT);
+        actionBox.setPadding(new Insets(16, 0, 0, 0));
+        
+        Button editBtn = new Button("Edit Details");
+        editBtn.getStyleClass().addAll("button", "btn-primary");
+        editBtn.setOnAction(e -> {
+            dialog.close();
+            showEditEquipmentDialog(eq);
+        });
+        
+        Button deleteBtn = new Button("Delete Equipment");
+        deleteBtn.getStyleClass().addAll("button", "btn-logout");
+        deleteBtn.setStyle("-fx-border-color: #ef476f; -fx-text-fill: #ef476f;");
+        deleteBtn.setOnAction(e -> {
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle("Delete Equipment");
+            confirm.setHeaderText("Are you sure you want to delete this equipment?");
+            confirm.setContentText("This action cannot be undone. " + eq.getEquipmentName());
+            
+            confirm.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    if (equipmentDAO.deleteEquipment(eq.getEquipmentId())) {
+                        changeLogDAO.logChange("Inventory", eq.getEquipmentId(), eq.getEquipmentName(),
+                            "Equipment Deleted", eq.getSerialNumber(), "DELETED", currentUser.getUserId());
+                        dialog.close();
+                        showInventory();
+                    } else {
+                        showAlert(Alert.AlertType.ERROR, "Deletion Failed", "Could not delete equipment. It may be linked to existing bookings.");
+                    }
+                }
+            });
+        });
+        
+        actionBox.getChildren().addAll(editBtn, deleteBtn);
+
+        content.getChildren().addAll(titleLbl, subtitleLbl, sep, grid, actionBox);
         dialogPane.setContent(content);
 
         dialog.showAndWait();
@@ -701,6 +738,143 @@ public class AdminDashboard {
                 }
                 data.setAll(refreshed);
                 showInventory(); // Refresh stats too
+            }
+        });
+    }
+
+    private void showEditEquipmentDialog(Equipment eq) {
+        Dialog<Equipment> dialog = new Dialog<>();
+        dialog.setTitle("Edit Equipment");
+        dialog.initOwner(mainApp.getPrimaryStage());
+
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.setStyle(
+            "-fx-background-color: #1a1a2e; -fx-border-color: #2a2a45; -fx-border-radius: 12; -fx-background-radius: 12;"
+        );
+
+        dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(16);
+        grid.setVgap(14);
+        grid.setPadding(new Insets(24));
+
+        TextField nameField = new TextField();
+        nameField.setPromptText("Equipment Name");
+        nameField.setText(eq.getEquipmentName());
+
+        TextField serialField = new TextField();
+        serialField.setPromptText("Serial Number");
+        serialField.setText(eq.getSerialNumber());
+
+        ComboBox<String> categoryBox = new ComboBox<>();
+        List<String> catNames = categoryDAO.getAllCategories().stream()
+                .map(Category::getCategoryName)
+                .collect(Collectors.toList());
+        if (!catNames.contains("Electronics")) {
+            catNames.add(0, "Electronics");
+        }
+        categoryBox.setItems(FXCollections.observableArrayList(catNames));
+        categoryBox.setEditable(true);
+        categoryBox.setPromptText("Select or Type Category");
+        
+        String currentCatName = "Unknown";
+        for (Category c : categoryDAO.getAllCategories()) {
+            if (c.getCategoryId() == eq.getCategoryId()) {
+                currentCatName = c.getCategoryName();
+                break;
+            }
+        }
+        categoryBox.setValue(currentCatName);
+
+        TextField specsField = new TextField();
+        specsField.setPromptText("Technical Specifications");
+        specsField.setText(eq.getTechnicalSpecifications());
+
+        TextField locationField = new TextField();
+        locationField.setPromptText("Storage Location");
+        locationField.setText(eq.getStorageLocation());
+
+        TextField costField = new TextField();
+        costField.setPromptText("Purchase Cost");
+        costField.setText(String.valueOf(eq.getPurchaseCost()));
+
+        DatePicker datePicker = new DatePicker();
+        try {
+            datePicker.setValue(java.time.LocalDate.parse(eq.getPurchaseDate()));
+        } catch (Exception ex) {
+            datePicker.setValue(java.time.LocalDate.now());
+        }
+        datePicker.setMaxWidth(Double.MAX_VALUE);
+
+        TextField assignedToField = new TextField();
+        assignedToField.setPromptText("Assigned To (Optional)");
+        if (eq.getAssignedTo() != null) {
+            assignedToField.setText(eq.getAssignedTo());
+        }
+
+        Label lbl0 = new Label("Name");            lbl0.getStyleClass().add("form-label");
+        Label lbl1 = new Label("Serial Number");  lbl1.getStyleClass().add("form-label");
+        Label lbl2 = new Label("Category");        lbl2.getStyleClass().add("form-label");
+        Label lbl3 = new Label("Specifications");  lbl3.getStyleClass().add("form-label");
+        Label lbl4 = new Label("Location");        lbl4.getStyleClass().add("form-label");
+        Label lbl5 = new Label("Purchase Cost");   lbl5.getStyleClass().add("form-label");
+        Label lbl6 = new Label("Purchase Date");   lbl6.getStyleClass().add("form-label");
+        Label lbl7 = new Label("Assigned To");     lbl7.getStyleClass().add("form-label");
+
+        grid.addRow(0, lbl0, nameField);
+        grid.addRow(1, lbl1, serialField);
+        grid.addRow(2, lbl2, categoryBox);
+        grid.addRow(3, lbl3, specsField);
+        grid.addRow(4, lbl4, locationField);
+        grid.addRow(5, lbl5, costField);
+        grid.addRow(6, lbl6, datePicker);
+        grid.addRow(7, lbl7, assignedToField);
+
+        dialogPane.setContent(grid);
+
+        dialog.setResultConverter(button -> {
+            if (button == ButtonType.OK) {
+                eq.setEquipmentName(nameField.getText());
+                eq.setSerialNumber(serialField.getText());
+                String catName = categoryBox.getValue();
+                int catId = 0;
+                if (catName != null && !catName.trim().isEmpty()) {
+                    catId = categoryDAO.getOrCreateCategory(catName.trim());
+                }
+                eq.setCategoryId(catId);
+                eq.setTechnicalSpecifications(specsField.getText());
+                eq.setStorageLocation(locationField.getText());
+                try {
+                    eq.setPurchaseCost(Double.parseDouble(costField.getText()));
+                } catch (NumberFormatException ex) {
+                    eq.setPurchaseCost(0);
+                }
+                String dateStr = datePicker.getValue() != null ? datePicker.getValue().toString() : java.time.LocalDate.now().toString();
+                eq.setPurchaseDate(dateStr);
+                
+                String assignedTxt = assignedToField.getText().trim();
+                if (!assignedTxt.isEmpty()) {
+                    eq.setAssignedTo(assignedTxt);
+                } else {
+                    eq.setAssignedTo(null);
+                }
+                
+                return eq;
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(updatedEq -> {
+            if (equipmentDAO.updateEquipment(updatedEq)) {
+                changeLogDAO.logChange("Inventory", updatedEq.getEquipmentId(), updatedEq.getEquipmentName(),
+                    "Equipment Edited", "—", "Updated details",
+                    currentUser.getUserId());
+                showInventory(); // Refresh view
+                // Re-open details dialog to show updated info
+                showEquipmentDetailsDialog(updatedEq);
+            } else {
+                showAlert(Alert.AlertType.ERROR, "Update Failed", "Could not update equipment details.");
             }
         });
     }
@@ -1245,8 +1419,11 @@ public class AdminDashboard {
         colId.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getLogId()).asObject());
         colId.setMaxWidth(70);
 
-        TableColumn<MaintenanceLog, Integer> colEquip = new TableColumn<>("Equipment ID");
-        colEquip.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getEquipmentId()).asObject());
+        TableColumn<MaintenanceLog, String> colEquip = new TableColumn<>("Equipment Name");
+        colEquip.setCellValueFactory(c -> {
+            Equipment eq = equipmentDAO.getEquipmentById(c.getValue().getEquipmentId());
+            return new SimpleStringProperty(eq != null ? eq.getEquipmentName() : "Unknown");
+        });
 
         TableColumn<MaintenanceLog, String> colDefect = new TableColumn<>("Defect Description");
         colDefect.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getDefectDescription()));
@@ -1323,8 +1500,75 @@ public class AdminDashboard {
         grid.setVgap(14);
         grid.setPadding(new Insets(24));
 
-        TextField equipIdField = new TextField();
-        equipIdField.setPromptText("Equipment ID");
+        ComboBox<Equipment> equipmentBox = new ComboBox<>();
+        equipmentBox.setEditable(true);
+        equipmentBox.setPromptText("Type to search equipment...");
+        equipmentBox.setMaxWidth(Double.MAX_VALUE);
+        
+        List<Equipment> allEquip = equipmentDAO.getAllEquipment();
+        ObservableList<Equipment> originalList = FXCollections.observableArrayList(allEquip);
+        equipmentBox.setItems(originalList);
+        
+        equipmentBox.setConverter(new javafx.util.StringConverter<Equipment>() {
+            @Override
+            public String toString(Equipment eq) {
+                return eq == null ? "" : (eq.getEquipmentName() + " (" + eq.getTechnicalSpecifications() + ")");
+            }
+
+            @Override
+            public Equipment fromString(String string) {
+                if (string == null || string.trim().isEmpty()) return null;
+                String trimmed = string.trim();
+                return allEquip.stream()
+                    .filter(eq -> {
+                        String fullDisplay = eq.getEquipmentName() + " (" + eq.getTechnicalSpecifications() + ")";
+                        return fullDisplay.equalsIgnoreCase(trimmed) || 
+                               (eq.getEquipmentName() != null && eq.getEquipmentName().equalsIgnoreCase(trimmed));
+                    })
+                    .findFirst()
+                    .orElse(null);
+            }
+        });
+
+        equipmentBox.setCellFactory(col -> new ListCell<>() {
+            @Override
+            protected void updateItem(Equipment item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item.getEquipmentName() + " (" + item.getTechnicalSpecifications() + ")");
+                }
+            }
+        });
+
+        equipmentBox.getEditor().textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == null || newVal.trim().isEmpty()) {
+                equipmentBox.setItems(originalList);
+                equipmentBox.hide();
+            } else {
+                Equipment selected = equipmentBox.getSelectionModel().getSelectedItem();
+                String trimmed = newVal.trim();
+                if (selected != null) {
+                    String fullDisplay = selected.getEquipmentName() + " (" + selected.getTechnicalSpecifications() + ")";
+                    if (fullDisplay.equalsIgnoreCase(trimmed) || 
+                        (selected.getEquipmentName() != null && selected.getEquipmentName().equalsIgnoreCase(trimmed))) {
+                        return;
+                    }
+                }
+                ObservableList<Equipment> filteredList = FXCollections.observableArrayList();
+                for (Equipment eq : originalList) {
+                    if ((eq.getEquipmentName() != null && eq.getEquipmentName().toLowerCase().contains(newVal.toLowerCase())) ||
+                        (eq.getSerialNumber() != null && eq.getSerialNumber().toLowerCase().contains(newVal.toLowerCase())) ||
+                        (eq.getTechnicalSpecifications() != null && eq.getTechnicalSpecifications().toLowerCase().contains(newVal.toLowerCase()))) {
+                        filteredList.add(eq);
+                    }
+                }
+                equipmentBox.setItems(filteredList);
+                if (!filteredList.isEmpty()) equipmentBox.show();
+                else equipmentBox.hide();
+            }
+        });
 
         TextArea defectField = new TextArea();
         defectField.setPromptText("Describe the defect...");
@@ -1339,13 +1583,13 @@ public class AdminDashboard {
         TextField dateField = new TextField();
         dateField.setPromptText("YYYY-MM-DD");
 
-        Label l1 = new Label("Equipment ID"); l1.getStyleClass().add("form-label");
+        Label l1 = new Label("Equipment Name"); l1.getStyleClass().add("form-label");
         Label l2 = new Label("Defect");       l2.getStyleClass().add("form-label");
         Label l3 = new Label("Parts Cost");   l3.getStyleClass().add("form-label");
         Label l4 = new Label("Technician");   l4.getStyleClass().add("form-label");
         Label l5 = new Label("Start Date");   l5.getStyleClass().add("form-label");
 
-        grid.addRow(0, l1, equipIdField);
+        grid.addRow(0, l1, equipmentBox);
         grid.addRow(1, l2, defectField);
         grid.addRow(2, l3, costField);
         grid.addRow(3, l4, techField);
@@ -1356,10 +1600,24 @@ public class AdminDashboard {
         dialog.setResultConverter(button -> {
             if (button == ButtonType.OK) {
                 MaintenanceLog log = new MaintenanceLog();
-                try {
-                    log.setEquipmentId(Integer.parseInt(equipIdField.getText()));
-                } catch (NumberFormatException ex) {
-                    log.setEquipmentId(0);
+                Equipment selectedEquip = equipmentBox.getValue();
+                if (selectedEquip == null) {
+                    String enteredText = equipmentBox.getEditor().getText().trim();
+                    selectedEquip = allEquip.stream()
+                        .filter(eq -> {
+                            String fullDisplay = eq.getEquipmentName() + " (" + eq.getTechnicalSpecifications() + ")";
+                            return fullDisplay.equalsIgnoreCase(enteredText) || 
+                                   (eq.getEquipmentName() != null && eq.getEquipmentName().equalsIgnoreCase(enteredText));
+                        })
+                        .findFirst()
+                        .orElse(null);
+                }
+                
+                if (selectedEquip != null) {
+                    log.setEquipmentId(selectedEquip.getEquipmentId());
+                } else {
+                    showAlert(Alert.AlertType.ERROR, "Validation Error", "Please select a valid equipment.");
+                    return null;
                 }
                 log.setDefectDescription(defectField.getText());
                 try {

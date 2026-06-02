@@ -51,6 +51,18 @@ public class EquipmentDAO {
         return false;
     }
     
+    public boolean deleteEquipment(int equipmentId) {
+        String query = "DELETE FROM equipment WHERE equipment_id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setInt(1, equipmentId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+    
     public Equipment getEquipmentById(int id) {
         String query = "SELECT * FROM equipment WHERE equipment_id = ?";
         try (Connection conn = DatabaseManager.getConnection();
