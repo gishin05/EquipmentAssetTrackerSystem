@@ -33,7 +33,7 @@ public class AdminDashboard {
     private VBox sidePanel;
     private boolean isLightMode = false;
     private StackPane contentArea;
-    private HBox navBtnContainer;
+    private VBox navBtnContainer;
     private Button activeNavBtn;
     private Label headerTitle;
 
@@ -63,9 +63,9 @@ public class AdminDashboard {
         rootView = new StackPane();
         mainView = new BorderPane();
 
-        // ── Header Navbar ──
-        HBox header = buildHeader();
-        mainView.setTop(header);
+        // ── Vertical Sidebar Navigation ──
+        VBox sidebar = buildSidebarLayout();
+        mainView.setLeft(sidebar);
 
         // ── Main Content Container ──
         VBox mainContentLayout = new VBox(20);
@@ -96,91 +96,94 @@ public class AdminDashboard {
     }
 
     // ═══════════════════════════════════════════════════════════
-    //  HEADER / NAVIGATION
+    //  SIDEBAR NAVIGATION
     // ═══════════════════════════════════════════════════════════
 
-    private HBox buildHeader() {
-        HBox header = new HBox(24);
-        header.getStyleClass().add("header-bar");
-        header.setAlignment(Pos.CENTER_LEFT);
-        header.setPadding(new Insets(12, 32, 12, 32));
+    /**
+     * Builds the primary vertical sidebar navigation engine docked to the left.
+     * Contains branding block, categorised nav buttons, and a bottom user utility strip.
+     */
+    
+    private VBox buildSidebarLayout() {
+        VBox sidebar = new VBox(0);
+        sidebar.setPrefWidth(245);
+        sidebar.setMinWidth(245);
+        sidebar.setMaxWidth(245);
+        sidebar.setStyle(
+            "-fx-background-color: -bg-card;" +
+            "-fx-border-color: -border;" +
+            "-fx-border-width: 0 1 0 0;"
+        );
 
-        // Horizontal Nav Container
-        navBtnContainer = new HBox(10);
-        navBtnContainer.setAlignment(Pos.CENTER_LEFT);
+        // ── BRANDING BLOCK ──────────────────────────────────────
+        VBox brandingBlock = new VBox(3);
+        brandingBlock.setPadding(new Insets(24, 20, 20, 20));
+        brandingBlock.setStyle("-fx-border-color: -border; -fx-border-width: 0 0 1 0;");
 
-        Button btnDashboard = createNavButton("📊 Dashboard", () -> showDashboard());
-        Button btnInventory = createNavButton("📦 Inventory", () -> showInventory());
-        Button btnLoans = createNavButton("📄 Booking", () -> showLoanApprovals());
-        Button btnMaintenance = createNavButton("🔧 Maintenance", () -> showMaintenance());
-        Button btnAudit = createNavButton("📋 Logs", () -> showAuditLogs());
+        Label appTitle = new Label("Obsidian Pro");
+        appTitle.setStyle(
+            "-fx-font-size: 18px;" +
+            "-fx-font-weight: 900;" +
+            "-fx-text-fill: -text-primary;"
+        );
 
-        navBtnContainer.getChildren().addAll(btnDashboard, btnInventory, btnLoans, btnMaintenance, btnAudit);
+        Label appSubtitle = new Label("EQUIPMENT TRACKER");
+        appSubtitle.setStyle(
+            "-fx-font-size: 10px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-text-fill: -text-accent;" +
+            "-fx-letter-spacing: 1px;"
+        );
 
-        // Initialize active state
+        brandingBlock.getChildren().addAll(appTitle, appSubtitle);
+
+        // ── NAV BUTTON CONTAINER ────────────────────────────────
+        navBtnContainer = new VBox(2);
+        navBtnContainer.setPadding(new Insets(16, 12, 12, 12));
+        VBox.setVgrow(navBtnContainer, Priority.ALWAYS);
+
+        // Category: MAIN SYSTEM
+        navBtnContainer.getChildren().add(buildNavCategory("MAIN SYSTEM"));
+        Button btnDashboard  = createNavButton("Dashboard",  () -> showDashboard());
+        Button btnInventory  = createNavButton("Inventory",  () -> showInventory());
+        navBtnContainer.getChildren().addAll(btnDashboard, btnInventory);
+
+        // Category: OPERATIONS
+        navBtnContainer.getChildren().add(buildNavCategory("OPERATIONS"));
+        Button btnBooking     = createNavButton("Booking Requests", () -> showLoanApprovals());
+        Button btnMaintenance = createNavButton("Maintenance Logs",  () -> showMaintenance());
+        navBtnContainer.getChildren().addAll(btnBooking, btnMaintenance);
+
+        // Category: LOGS
+        navBtnContainer.getChildren().add(buildNavCategory("System"));
+        Button btnAuditLogs   = createNavButton("Logs",  () -> showAuditLogs());
+        navBtnContainer.getChildren().addAll(btnAuditLogs);
+
+        // Set initial active state
         setActiveNavBtn(btnDashboard);
 
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
+        // ── BOTTOM USER STRIP ───────────────────────────────────
+        VBox userStrip = new VBox(6);
+        userStrip.setPadding(new Insets(12, 12, 20, 12));
+        userStrip.setStyle("-fx-border-color: -border; -fx-border-width: 1 0 0 0;");
 
         Label userName = new Label(currentUser.getUsername());
-        userName.setStyle("-fx-text-fill: -text-primary; -fx-font-weight: bold; -fx-font-size: 14px; -fx-cursor: hand;");
-        userName.setOnMouseClicked(e -> {
-            sidePanel.setVisible(!sidePanel.isVisible());
-            sidePanel.toFront();
-        });
+        userName.setStyle(
+            "-fx-text-fill: -text-primary;" +
+            "-fx-font-weight: bold;" +
+            "-fx-font-size: 13px;"
+        );
 
-        Label roleBadge = new Label("ADMIN");
-        roleBadge.getStyleClass().add("header-role-badge");
+        Label roleBadgeLabel = new Label("ADMIN");
+        roleBadgeLabel.getStyleClass().add("header-role-badge");
 
-        header.getChildren().addAll(navBtnContainer, spacer, userName, roleBadge);
-        return header;
-    }
-
-    private void buildSidePanel() {
-        sidePanel = new VBox(10);
-        sidePanel.getStyleClass().add("side-panel");
-        sidePanel.setPrefWidth(220);
-        sidePanel.setMaxWidth(220);
-        sidePanel.setMaxHeight(Region.USE_PREF_SIZE);
-        StackPane.setAlignment(sidePanel, Pos.TOP_RIGHT);
-        StackPane.setMargin(sidePanel, new Insets(60, 20, 0, 0));
-        sidePanel.setVisible(false);
-
-        Label title = new Label(currentUser.getUsername());
-        title.getStyleClass().add("side-panel-title");
-
-        Label roleLbl = new Label("Role: ADMIN");
-        roleLbl.getStyleClass().add("side-panel-role");
-
-        Separator sep = new Separator();
-
-        Button themeBtn = new Button(isLightMode ? "🌙 Switch to Dark Mode" : "☀️ Switch to Light Mode");
-        themeBtn.getStyleClass().add("side-panel-btn");
-        themeBtn.setMaxWidth(Double.MAX_VALUE);
-        themeBtn.setOnAction(e -> {
-            isLightMode = !isLightMode;
-            if (isLightMode) {
-                rootView.getScene().getRoot().getStyleClass().add("light-theme");
-                themeBtn.setText("🌙 Switch to Dark Mode");
-            } else {
-                rootView.getScene().getRoot().getStyleClass().remove("light-theme");
-                themeBtn.setText("☀️ Switch to Light Mode");
-            }
-        });
-
+        
         Button changePwdBtn = new Button("🔑 Change Password");
         changePwdBtn.getStyleClass().add("side-panel-btn");
         changePwdBtn.setMaxWidth(Double.MAX_VALUE);
-        changePwdBtn.setOnAction(e -> {
-            sidePanel.setVisible(false);
-            showChangePasswordDialog();
-        });
+        changePwdBtn.setOnAction(e -> showChangePasswordDialog());
 
-        Region spring = new Region();
-        spring.setMinHeight(20);
-
-        Button logoutBtn = new Button("Logout");
+        Button logoutBtn = new Button("⏻  Logout");
         logoutBtn.getStyleClass().add("side-panel-btn-logout");
         logoutBtn.setMaxWidth(Double.MAX_VALUE);
         logoutBtn.setOnAction(e -> {
@@ -190,25 +193,70 @@ public class AdminDashboard {
             mainApp.showLoginScreen();
         });
 
-        sidePanel.getChildren().addAll(title, roleLbl, sep, themeBtn, changePwdBtn, spring, logoutBtn);
+        userStrip.getChildren().addAll(changePwdBtn, logoutBtn);
+
+        // ── ASSEMBLE SIDEBAR ────────────────────────────────────
+        sidebar.getChildren().addAll(brandingBlock, navBtnContainer, userStrip);
+        return sidebar;
     }
+    
+
+    /** Returns a styled category header label for sidebar nav groupings. */
+    /** Returns a styled category header label for sidebar nav groupings. */
+    private Label buildNavCategory(String text) {
+        Label lbl = new Label(text);
+        
+        // Add the clean CSS class name so it can be styled from styles.css
+        lbl.getStyleClass().add("sidebar-category-header");
+        
+        return lbl;
+    }
+    
 
     private Button createNavButton(String text, Runnable action) {
         Button btn = new Button(text);
         btn.getStyleClass().add("header-nav-btn");
+        btn.setMaxWidth(Double.MAX_VALUE);
+        btn.setAlignment(Pos.CENTER_LEFT);
+        
+        // Inline code fix: Forces JavaFX to completely drop its built-in blue outline engine 
+        // directly on the control instance so it uses only your CSS class rules
+        btn.setStyle(
+            "-fx-background-insets: 0;" +
+            "-fx-focus-color: transparent;" +
+            "-fx-faint-focus-color: transparent;"
+        );
+
         btn.setOnAction(e -> {
             setActiveNavBtn(btn);
             action.run();
         });
         return btn;
     }
-
     private void setActiveNavBtn(Button btn) {
         if (activeNavBtn != null) {
             activeNavBtn.getStyleClass().remove("header-nav-btn-active");
         }
         btn.getStyleClass().add("header-nav-btn-active");
         activeNavBtn = btn;
+        
+    }
+    
+    
+
+    /**
+     * Retained legacy floating side panel — repurposed as the popup user-settings
+     * overlay triggered from account actions. Hidden by default.
+     */
+    private void buildSidePanel() {
+        sidePanel = new VBox(10);
+        sidePanel.getStyleClass().add("side-panel");
+        sidePanel.setPrefWidth(220);
+        sidePanel.setMaxWidth(220);
+        sidePanel.setMaxHeight(Region.USE_PREF_SIZE);
+        StackPane.setAlignment(sidePanel, Pos.BOTTOM_LEFT);
+        StackPane.setMargin(sidePanel, new Insets(0, 0, 20, 255));
+        sidePanel.setVisible(false);
     }
 
     // ═══════════════════════════════════════════════════════════
