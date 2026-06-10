@@ -190,7 +190,17 @@
 }
 
 /* Secondary Descriptive Labels Beneath the Amounts */
+<<<<<<< HEAD
 
+=======
+.metric-label {
+    -fx-font-family: "Plus Jakarta Sans", sans-serif;
+    -fx-font-weight: 600;
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-secondary;
+    -fx-padding: 4 0 0 0;
+}
+>>>>>>> 3401fa5 (UNIFINISHED UPDATED THEME OF ADMIN DASHBOARD, LOGIN SCREEN AND CSS STYLE)
 
 /* ═════════════════════════════════════════════════════════════════════════
    3. CORE INTERFACE CONTROLS (INPUTS, BUTTONS, CHECKBOXES)
@@ -441,7 +451,18 @@
 /* ═════════════════════════════════════════════════════════════════════════
    6. BRIGHT AMETHYST CHARTS & WORKSPACE PANELS
    ═════════════════════════════════════════════════════════════════════════ */
+<<<<<<< HEAD
 
+=======
+   /* Update this specific class to fix the invisible labels */
+   .metric-label {
+       -fx-font-family: "Plus Jakarta Sans", sans-serif;
+       -fx-font-weight: 600;
+       -fx-font-size: 12px;
+       -fx-text-fill: -text-secondary; /* This ensures the text is visible */
+       -fx-padding: 4 0 0 0;
+   }
+>>>>>>> 3401fa5 (UNIFINISHED UPDATED THEME OF ADMIN DASHBOARD, LOGIN SCREEN AND CSS STYLE)
 .chart, .card-panel {
     -fx-padding: 24;
     -fx-background-color: -bg-primary;
