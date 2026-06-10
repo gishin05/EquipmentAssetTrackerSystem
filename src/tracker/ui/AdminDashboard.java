@@ -58,43 +58,46 @@ public class AdminDashboard {
     public javafx.scene.Parent getView() {
         return rootView;
     }
-
+    
     private void buildView() {
         rootView = new StackPane();
         mainView = new BorderPane();
-
+     
         // ── Vertical Sidebar Navigation ──
         VBox sidebar = buildSidebarLayout();
         mainView.setLeft(sidebar);
-
+     
         // ── Main Content Container ──
         VBox mainContentLayout = new VBox(20);
         mainContentLayout.setPadding(new Insets(24, 32, 24, 32));
         mainContentLayout.setStyle("-fx-background-color: -bg-primary;");
-
+     
         headerTitle = new Label("Dashboard Summary");
         headerTitle.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: -text-primary;");
-
+     
+        // ── Separator line below the header ──
+        Separator separator = new Separator();
+        separator.setStyle("-fx-background-color: #e4e7ec; -fx-padding: 0;");
+        VBox.setMargin(separator, new Insets(0, -32, 8, -32));
+     
         contentArea = new StackPane();
         contentArea.getStyleClass().add("content-area");
         contentArea.setPadding(new Insets(0));
         VBox.setVgrow(contentArea, Priority.ALWAYS);
-
-        mainContentLayout.getChildren().addAll(headerTitle, contentArea);
-
+     
+        mainContentLayout.getChildren().addAll(headerTitle, separator, contentArea);
+     
         ScrollPane scrollPane = new ScrollPane(mainContentLayout);
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
         scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
         mainView.setCenter(scrollPane);
-
+     
         buildSidePanel();
         rootView.getChildren().addAll(mainView, sidePanel);
-
-        // Show dashboard by default
+     
         showDashboard();
     }
-
     // ═══════════════════════════════════════════════════════════
     //  SIDEBAR NAVIGATION
     // ═══════════════════════════════════════════════════════════
@@ -110,79 +113,84 @@ public class AdminDashboard {
         sidebar.setMinWidth(245);
         sidebar.setMaxWidth(245);
         sidebar.setStyle(
-            "-fx-background-color: -bg-card;" +
-            "-fx-border-color: -border;" +
+            "-fx-background-color: #1a1825;" +
+            "-fx-border-color: #2a2740;" +
             "-fx-border-width: 0 1 0 0;"
         );
-
+     
         // ── BRANDING BLOCK ──────────────────────────────────────
         VBox brandingBlock = new VBox(3);
         brandingBlock.setPadding(new Insets(24, 20, 20, 20));
-        brandingBlock.setStyle("-fx-border-color: -border; -fx-border-width: 0 0 1 0;");
-
+        brandingBlock.setStyle("-fx-border-color: #2a2740; -fx-border-width: 0 0 1 0;");
+     
         Label appTitle = new Label("Obsidian Pro");
         appTitle.setStyle(
+            "-fx-font-family: 'Poppins';" +
             "-fx-font-size: 18px;" +
             "-fx-font-weight: 900;" +
-            "-fx-text-fill: -text-primary;"
+            "-fx-text-fill: #ffffff;"
         );
-
+     
         Label appSubtitle = new Label("EQUIPMENT TRACKER");
         appSubtitle.setStyle(
+            "-fx-font-family: 'Poppins';" +
             "-fx-font-size: 10px;" +
             "-fx-font-weight: bold;" +
-            "-fx-text-fill: -text-accent;" +
+            "-fx-text-fill: #7b94ff;" +
             "-fx-letter-spacing: 1px;"
         );
-
+     
         brandingBlock.getChildren().addAll(appTitle, appSubtitle);
-
+     
         // ── NAV BUTTON CONTAINER ────────────────────────────────
+     // ── NAV BUTTON CONTAINER ────────────────────────────────
         navBtnContainer = new VBox(2);
         navBtnContainer.setPadding(new Insets(16, 12, 12, 12));
         VBox.setVgrow(navBtnContainer, Priority.ALWAYS);
 
-        // Category: MAIN SYSTEM
+        // MAIN SYSTEM
         navBtnContainer.getChildren().add(buildNavCategory("MAIN SYSTEM"));
         Button btnDashboard  = createNavButton("Dashboard",  () -> showDashboard());
         Button btnInventory  = createNavButton("Inventory",  () -> showInventory());
         navBtnContainer.getChildren().addAll(btnDashboard, btnInventory);
 
-        // Category: OPERATIONS
+        // OPERATIONS
         navBtnContainer.getChildren().add(buildNavCategory("OPERATIONS"));
         Button btnBooking     = createNavButton("Booking Requests", () -> showLoanApprovals());
         Button btnMaintenance = createNavButton("Maintenance Logs",  () -> showMaintenance());
         navBtnContainer.getChildren().addAll(btnBooking, btnMaintenance);
 
-        // Category: LOGS
-        navBtnContainer.getChildren().add(buildNavCategory("System"));
+        // SYSTEM
+        navBtnContainer.getChildren().add(buildNavCategory("SYSTEM"));
         Button btnAuditLogs   = createNavButton("Logs",  () -> showAuditLogs());
-        navBtnContainer.getChildren().addAll(btnAuditLogs);
+        navBtnContainer.getChildren().add(btnAuditLogs);
+        
 
-        // Set initial active state
+        // Set default active button
         setActiveNavBtn(btnDashboard);
 
         // ── BOTTOM USER STRIP ───────────────────────────────────
         VBox userStrip = new VBox(6);
         userStrip.setPadding(new Insets(12, 12, 20, 12));
-        userStrip.setStyle("-fx-border-color: -border; -fx-border-width: 1 0 0 0;");
+        userStrip.setStyle("-fx-border-color: #2a2740; -fx-border-width: 1 0 0 0;");
 
         Label userName = new Label(currentUser.getUsername());
         userName.setStyle(
-            "-fx-text-fill: -text-primary;" +
+            "-fx-font-family: 'Poppins';" +
+            "-fx-text-fill: #ffffff;" +
             "-fx-font-weight: bold;" +
             "-fx-font-size: 13px;"
         );
+        
 
         Label roleBadgeLabel = new Label("ADMIN");
         roleBadgeLabel.getStyleClass().add("header-role-badge");
-
-        
+     
         Button changePwdBtn = new Button("🔑 Change Password");
         changePwdBtn.getStyleClass().add("side-panel-btn");
         changePwdBtn.setMaxWidth(Double.MAX_VALUE);
         changePwdBtn.setOnAction(e -> showChangePasswordDialog());
-
+     
         Button logoutBtn = new Button("⏻  Logout");
         logoutBtn.getStyleClass().add("side-panel-btn-logout");
         logoutBtn.setMaxWidth(Double.MAX_VALUE);
@@ -192,14 +200,13 @@ public class AdminDashboard {
             }
             mainApp.showLoginScreen();
         });
-
+     
         userStrip.getChildren().addAll(changePwdBtn, logoutBtn);
-
+     
         // ── ASSEMBLE SIDEBAR ────────────────────────────────────
         sidebar.getChildren().addAll(brandingBlock, navBtnContainer, userStrip);
         return sidebar;
     }
-    
 
     /** Returns a styled category header label for sidebar nav groupings. */
     /** Returns a styled category header label for sidebar nav groupings. */

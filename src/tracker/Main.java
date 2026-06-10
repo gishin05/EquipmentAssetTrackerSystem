@@ -18,7 +18,7 @@ public class Main extends Application {
     private Scene scene;
 
     /**
-     * Launch the application.
+     * Launch the application.W
      */
     public static void main(String[] args) {
         // Initialize the embedded SQLite database and tables

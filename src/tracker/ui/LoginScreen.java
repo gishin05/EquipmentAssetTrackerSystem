@@ -4,17 +4,13 @@ import javafx.animation.FadeTransition;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Hyperlink;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
 import tracker.Main;
@@ -27,9 +23,6 @@ public class LoginScreen {
     private StackPane view;
     private UserDAO userDAO;
 
-    /**
-     * Create the login screen.
-     */
     public LoginScreen(Main mainApp) {
         this.mainApp = mainApp;
         this.userDAO = new UserDAO();
@@ -41,153 +34,174 @@ public class LoginScreen {
     }
 
     private void buildView() {
-        // Core view root layer setup
+        // ── Root: soft lavender canvas background (matches --body-bg: #f4f3fb) ──
         view = new StackPane();
         view.getStyleClass().add("login-root");
-        view.setMaxWidth(Double.MAX_VALUE);
-        view.setMaxHeight(Double.MAX_VALUE);
+        view.setAlignment(Pos.CENTER);
 
-        // ── Split Pane Horizontal Master Layout ──
-        HBox splitContainer = new HBox();
-        splitContainer.setMaxWidth(Double.MAX_VALUE);
-        splitContainer.setMaxHeight(Double.MAX_VALUE);
+        // ══════════════════════════════════════════════════════════════
+        // THE CENTERED SPLIT CARD  (900px wide, 560px tall, radius 20)
+        // ══════════════════════════════════════════════════════════════
+        HBox splitCard = new HBox();
+        splitCard.getStyleClass().add("login-split-card");
+        splitCard.setPrefWidth(900);
+        splitCard.setMaxWidth(900);
+        splitCard.setMinWidth(900);
+        splitCard.setPrefHeight(560);
+        splitCard.setMaxHeight(560);
+        splitCard.setMinHeight(560);
 
-        // ═══════════════════════════════════════════════════════════
-        // LEFT SPLIT-PANE: Structural Sync with Technical Specs Document
-        // ═══════════════════════════════════════════════════════════
-        VBox leftPane = new VBox(38); 
-        leftPane.getStyleClass().add("login-left-pane");
-        leftPane.setPadding(new Insets(60, 50, 60, 65));
-        leftPane.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(leftPane, Priority.ALWAYS);
-        leftPane.setMaxWidth(Double.MAX_VALUE);
+        // Clip the card to rounded corners
+        Rectangle clip = new Rectangle(900, 560);
+        clip.setArcWidth(40);
+        clip.setArcHeight(40);
+        splitCard.setClip(clip);
 
-        // Header Title / Subsystem Brand Block
-        VBox brandBlock = new VBox(4);
-        Label brandTitle = new Label("Obsidian Pro");
-        brandTitle.setStyle("-fx-font-family: 'Inter'; -fx-font-weight: 900; -fx-font-size: 22px; -fx-text-fill: #ffffff; -fx-letter-spacing: -0.5px;");
-        Label brandSubtitle = new Label("Equipment Asset Tracker System");
-        brandSubtitle.setStyle("-fx-font-family: 'Inter'; -fx-font-weight: 500; -fx-font-size: 12px; -fx-text-fill: #7b94ff;");
-        brandBlock.getChildren().addAll(brandTitle, brandSubtitle);
+        // ═══════════════════════════════════════
+        // LEFT HALF — Purple gradient branding
+        // ═══════════════════════════════════════
+        VBox leftPane = new VBox(0);
+        leftPane.getStyleClass().add("login-left-panel");
+        leftPane.setPadding(new Insets(48, 44, 44, 44));
+        leftPane.setAlignment(Pos.TOP_LEFT);
+        leftPane.setPrefWidth(450);
+        leftPane.setMinWidth(450);
+        leftPane.setMaxWidth(450);
 
-        // Mini Platform Status Tag
-        Label tagLabel = new Label("• OFFLINE TERMINAL CORE");
-        tagLabel.setStyle("-fx-font-family: 'Inter'; -fx-font-weight: 800; -fx-font-size: 10px; -fx-text-fill: #7b94ff; -fx-background-color: rgba(79, 110, 247, 0.16); -fx-padding: 5 10 5 10; -fx-background-radius: 20;");
+        // ── Logo block ──
+        HBox logoRow = new HBox(12);
+        logoRow.setAlignment(Pos.CENTER_LEFT);
+        StackPane logoIcon = new StackPane();
+        logoIcon.getStyleClass().add("login-logo-icon");
+        logoIcon.setMinSize(40, 40);
+        logoIcon.setMaxSize(40, 40);
+        Label logoIconLabel = new Label("⬡");
+        logoIconLabel.setStyle("-fx-text-fill: white; -fx-font-size: 18px;");
+        logoIcon.getChildren().add(logoIconLabel);
 
-        // System Objectives Typography Block
-        VBox marketingText = new VBox(12);
-        Label mainHeading = new Label("Track Your\nHardware Smarter,\nNot Harder.");
-        mainHeading.setStyle("-fx-font-family: 'Inter'; -fx-font-weight: 900; -fx-font-size: 38px; -fx-text-fill: #ffffff; -fx-line-spacing: -4px;");
-        Label miniDescription = new Label("A secure desktop application to comprehensively manage organizational hardware via a self-contained local SQLite architecture.");
-        miniDescription.setStyle("-fx-font-family: 'Inter'; -fx-text-fill: rgba(240, 240, 250, 0.7); -fx-font-size: 13.5px; -fx-max-width: 440px; -fx-line-spacing: 2px;");
-        miniDescription.setWrapText(true);
-        marketingText.getChildren().addAll(mainHeading, miniDescription);
+        VBox logoText = new VBox(2);
+        Label logoName = new Label("Obsidian Pro");
+        logoName.getStyleClass().add("login-logo-name");
+        Label logoSub = new Label("Equipment Asset Tracker");
+        logoSub.getStyleClass().add("login-logo-sub");
+        logoText.getChildren().addAll(logoName, logoSub);
+        logoRow.getChildren().addAll(logoIcon, logoText);
 
-        // Functional Feature Verification List Map (Pulled from Document Specifications)
-        VBox featuresList = new VBox(16);
+        // ── Headline ──
+        Label headline = new Label("Track Your\nHardware Smarter,\nNot Harder.");
+        headline.getStyleClass().add("login-headline");
+        headline.setWrapText(true);
+        VBox.setMargin(headline, new Insets(24, 0, 24, 0));
+
+        // ── Feature list ──
+        VBox featuresList = new VBox(18);
         featuresList.getChildren().addAll(
-            createFeatureItem("📦 Asset Inventory Manager", "Real-time visibility into local hardware availability and system user assignments."),
-            createFeatureItem("⚡ Loan Lifecycle Workflow", "Automated deployment verification checking to strictly enforce check-out and check-in steps."),
-            createFeatureItem("🛡️ Automated Conflict Prevention", "Built-in database validation blocks double-bookings and chronological schedule overlaps."),
-            createFeatureItem("🛠️ Repair Registry Engine", "Connects inventory metrics directly with ongoing defect logging and fault isolation maintenance dispatching.")
+            createFeatureItem("📦", "Asset Inventory Manager",
+                "Real-time visibility into hardware availability and user assignments."),
+            createFeatureItem("⚡", "Loan Lifecycle Workflow",
+                "Automated deployment verification for check-out and check-in steps."),
+            createFeatureItem("🛡️", "Conflict Prevention",
+                "Built-in validation blocks double-bookings and schedule overlaps."),
+            createFeatureItem("🛠️", "Repair Registry Engine",
+                "Connects inventory metrics with defect logging and maintenance.")
         );
 
         Region leftSpacer = new Region();
         VBox.setVgrow(leftSpacer, Priority.ALWAYS);
-        
-        Label copyrightLabel = new Label("© 2026 Equipment Asset Tracker — Zero-Configuration Deployment Runtime");
-        copyrightLabel.setStyle("-fx-font-family: 'Inter'; -fx-text-fill: rgba(240, 240, 250, 0.35); -fx-font-size: 11px;");
 
-        leftPane.getChildren().addAll(brandBlock, tagLabel, marketingText, featuresList, leftSpacer, copyrightLabel);
+        Label copyright = new Label("© 2026 Equipment Asset Tracker System");
+        copyright.getStyleClass().add("login-copyright");
 
-        // ═══════════════════════════════════════════════════════════
-        // RIGHT SPLIT-PANE: Clean Form Authentication Workspace
-        // ═══════════════════════════════════════════════════════════
-        StackPane rightPane = new StackPane();
-        rightPane.getStyleClass().add("login-right-pane");
-        HBox.setHgrow(rightPane, Priority.ALWAYS);
-        rightPane.setMaxWidth(Double.MAX_VALUE);
-        rightPane.setAlignment(Pos.CENTER);
+        leftPane.getChildren().addAll(logoRow, headline, featuresList, leftSpacer, copyright);
 
-        // Form Content Context Card Container
-        VBox loginCard = new VBox(24); 
-        loginCard.getStyleClass().add("login-card");
-        loginCard.setAlignment(Pos.CENTER_LEFT);
-        loginCard.setMinWidth(380);
-        loginCard.setMaxWidth(420);
+        // ═══════════════════════════════════════
+        // RIGHT HALF — Clean white login form
+        // ═══════════════════════════════════════
+        VBox rightPane = new VBox(0);
+        rightPane.getStyleClass().add("login-right-panel");
+        rightPane.setPadding(new Insets(48, 48, 48, 48));
+        rightPane.setAlignment(Pos.CENTER_LEFT);
+        rightPane.setPrefWidth(450);
+        rightPane.setMinWidth(450);
+        rightPane.setMaxWidth(450);
 
-        // Top Form Welcoming Segment
-        VBox headerBlock = new VBox(6);
-        Label titleLabel = new Label("Welcome back, Admin!");
-        titleLabel.getStyleClass().add("login-title");
-        Label subtitle = new Label("Sign in to your account to access your system control dashboard.");
-        subtitle.getStyleClass().add("login-subtitle");
-        subtitle.setWrapText(true);
-        headerBlock.getChildren().addAll(titleLabel, subtitle);
+        // Greeting
+        Label greeting = new Label("Welcome back, Admin!");
+        greeting.getStyleClass().add("login-greeting");
 
-        // Username layout segment
-        VBox usernameBlock = new VBox(8);
+        Label loginSub = new Label("Sign in to access your system control dashboard.");
+        loginSub.getStyleClass().add("login-sub");
+        loginSub.setWrapText(true);
+        VBox.setMargin(loginSub, new Insets(4, 0, 22, 0));
+
+        // Username field
         Label usernameLabel = new Label("USERNAME / ASSET ID");
         usernameLabel.getStyleClass().add("login-field-label");
         TextField usernameField = new TextField();
         usernameField.setPromptText("Enter your username or ID...");
-        usernameField.setId("login-username");
-        usernameBlock.getChildren().addAll(usernameLabel, usernameField);
+        usernameField.getStyleClass().add("login-input");
+        VBox usernameBlock = new VBox(6, usernameLabel, usernameField);
+        VBox.setMargin(usernameBlock, new Insets(0, 0, 14, 0));
 
-        // Password layout segment
-        VBox passwordBlock = new VBox(8);
+        // Password field
         Label passwordLabel = new Label("PASSWORD");
         passwordLabel.getStyleClass().add("login-field-label");
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("••••••••••••");
-        passwordField.setId("login-password");
-        passwordBlock.getChildren().addAll(passwordLabel, passwordField);
+        passwordField.getStyleClass().add("login-input");
+        VBox passwordBlock = new VBox(6, passwordLabel, passwordField);
+        VBox.setMargin(passwordBlock, new Insets(0, 0, 14, 0));
 
-        // Operational Error Label (Handled via CSS transitions)
+        // Remember me + Forgot password row
+        HBox optionsRow = new HBox();
+        optionsRow.setAlignment(Pos.CENTER_LEFT);
+        CheckBox rememberMe = new CheckBox("Remember me");
+        rememberMe.getStyleClass().add("login-check");
+        Region rowSpacer = new Region();
+        HBox.setHgrow(rowSpacer, Priority.ALWAYS);
+        Hyperlink forgotLink = new Hyperlink("Forgot password?");
+        forgotLink.getStyleClass().add("login-forgot");
+        optionsRow.getChildren().addAll(rememberMe, rowSpacer, forgotLink);
+        VBox.setMargin(optionsRow, new Insets(0, 0, 18, 0));
+
+        // Error label
         Label errorLabel = new Label();
         errorLabel.getStyleClass().add("login-error");
         errorLabel.setVisible(false);
         errorLabel.setManaged(false);
+        errorLabel.setWrapText(true);
+        VBox.setMargin(errorLabel, new Insets(0, 0, 12, 0));
 
-        // Extended interface actions contextual layer (Remember Me / Forgot Access)
-        HBox actionsRow = new HBox();
-        actionsRow.setAlignment(Pos.CENTER_LEFT);
-        CheckBox rememberMe = new CheckBox("Remember me");
-        rememberMe.setStyle("-fx-text-fill: #7e7ea8; -fx-font-size: 12.5px; -fx-cursor: hand;");
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        Hyperlink forgotPassword = new Hyperlink("Forgot password?");
-        actionsRow.getChildren().addAll(rememberMe, spacer, forgotPassword);
-
-        // Primary Action Submissions button
+        // Sign in button
         Button loginBtn = new Button("Sign In to Secure Terminal");
-        loginBtn.getStyleClass().addAll("btn-primary");
+        loginBtn.getStyleClass().add("login-btn");
         loginBtn.setMaxWidth(Double.MAX_VALUE);
-        loginBtn.setId("login-button");
 
-        // Footer block segment
-        Label footerText = new Label("Default admin: Admin / Admin");
-        footerText.getStyleClass().add("login-subtitle");
-        footerText.setStyle("-fx-font-size: 11px;");
-        footerText.setAlignment(Pos.CENTER);
+        // Default credentials hint
+        Label defaultHint = new Label("Default admin: Admin / Admin");
+        defaultHint.getStyleClass().add("login-default-hint");
+        defaultHint.setMaxWidth(Double.MAX_VALUE);
+        defaultHint.setAlignment(Pos.CENTER);
+        VBox.setMargin(defaultHint, new Insets(14, 0, 0, 0));
 
-        // Bind interactive right elements into card pane
-        loginCard.getChildren().addAll(
-            headerBlock,
-            usernameBlock,
-            passwordBlock,
-            errorLabel,
-            actionsRow,
-            loginBtn,
-            footerText
+        rightPane.getChildren().addAll(
+            greeting, loginSub,
+            usernameBlock, passwordBlock,
+            optionsRow, errorLabel,
+            loginBtn, defaultHint
         );
 
-        // Final layout staging assembly links
-        rightPane.getChildren().add(loginCard);
-        splitContainer.getChildren().addAll(leftPane, rightPane);
-        view.getChildren().add(splitContainer);
+        // ── Assemble card ──
+        splitCard.getChildren().addAll(leftPane, rightPane);
 
-        // ── Database Access / Login Action Control Map ──
+        // ── Card drop shadow wrapper ──
+        StackPane cardWrapper = new StackPane(splitCard);
+        cardWrapper.getStyleClass().add("login-card-shadow");
+        cardWrapper.setMaxWidth(920);
+
+        view.getChildren().add(cardWrapper);
+
+        // ── Login logic ──
         loginBtn.setOnAction(e -> {
             String username = usernameField.getText().trim();
             String password = passwordField.getText();
@@ -208,44 +222,46 @@ public class LoginScreen {
                 }
             } else {
                 showError(errorLabel, "Invalid credentials. Please try again.");
-                shakeNode(loginCard);
+                shakeNode(splitCard);
             }
         });
 
-        // Event listener hooks for field submission shortcuts
         passwordField.setOnAction(e -> loginBtn.fire());
         usernameField.setOnAction(e -> passwordField.requestFocus());
 
-        // ── Entrance Animation Transition Matrices ──
-        loginCard.setOpacity(0);
-        loginCard.setTranslateY(30);
-
-        FadeTransition fadeIn = new FadeTransition(Duration.millis(600), loginCard);
-        fadeIn.setFromValue(0);
-        fadeIn.setToValue(1);
-
-        TranslateTransition slideUp = new TranslateTransition(Duration.millis(600), loginCard);
-        slideUp.setFromY(30);
-        slideUp.setToY(0);
-
-        fadeIn.play();
-        slideUp.play();
+        // ── Entrance animation ──
+        splitCard.setOpacity(0);
+        splitCard.setTranslateY(24);
+        FadeTransition fade = new FadeTransition(Duration.millis(500), splitCard);
+        fade.setFromValue(0);
+        fade.setToValue(1);
+        TranslateTransition slide = new TranslateTransition(Duration.millis(500), splitCard);
+        slide.setFromY(24);
+        slide.setToY(0);
+        fade.play();
+        slide.play();
     }
 
-    /**
-     * Generates clean typographic layout entries for the platform feature list checklist.
-     */
-    private HBox createFeatureItem(String title, String desc) {
+    private HBox createFeatureItem(String emoji, String title, String desc) {
+        StackPane iconBox = new StackPane();
+        iconBox.getStyleClass().add("login-feature-icon");
+        iconBox.setMinSize(32, 32);
+        iconBox.setMaxSize(32, 32);
+        Label iconLabel = new Label(emoji);
+        iconLabel.setStyle("-fx-font-size: 13px;");
+        iconBox.getChildren().add(iconLabel);
+
         VBox text = new VBox(2);
         Label t = new Label(title);
-        t.setStyle("-fx-text-fill: #f0f0fa; -fx-font-family: 'Inter'; -fx-font-weight: 700; -fx-font-size: 13.5px;");
+        t.getStyleClass().add("login-feature-title");
         Label d = new Label(desc);
-        d.setStyle("-fx-text-fill: #7e7ea8; -fx-font-family: 'Inter'; -fx-font-size: 12px; -fx-max-width: 440px;");
+        d.getStyleClass().add("login-feature-desc");
         d.setWrapText(true);
+        d.setMaxWidth(260);
         text.getChildren().addAll(t, d);
-        
-        HBox row = new HBox(12, text);
-        row.setAlignment(Pos.CENTER_LEFT);
+
+        HBox row = new HBox(12, iconBox, text);
+        row.setAlignment(Pos.TOP_LEFT);
         return row;
     }
 
@@ -253,14 +269,13 @@ public class LoginScreen {
         errorLabel.setText(message);
         errorLabel.setVisible(true);
         errorLabel.setManaged(true);
-
-        FadeTransition fade = new FadeTransition(Duration.millis(300), errorLabel);
+        FadeTransition fade = new FadeTransition(Duration.millis(250), errorLabel);
         fade.setFromValue(0);
         fade.setToValue(1);
         fade.play();
     }
 
-    private void shakeNode(VBox node) {
+    private void shakeNode(HBox node) {
         TranslateTransition shake = new TranslateTransition(Duration.millis(50), node);
         shake.setFromX(0);
         shake.setByX(10);
