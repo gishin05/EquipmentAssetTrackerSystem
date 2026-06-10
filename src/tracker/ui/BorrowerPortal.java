@@ -264,9 +264,9 @@ public class BorrowerPortal {
         VBox.setVgrow(table, Priority.ALWAYS);
         table.setMinHeight(450);
 
-        // Load equipment lookup map dynamically
+        // Fixed to track Equipment Name instead of Serial Number
         java.util.Map<Integer, String> equipmentMap = equipmentDAO.getAllEquipment().stream()
-            .collect(java.util.stream.Collectors.toMap(Equipment::getEquipmentId, Equipment::getSerialNumber, (a, b) -> a));
+            .collect(java.util.stream.Collectors.toMap(Equipment::getEquipmentId, Equipment::getEquipmentName, (a, b) -> a));
 
         TableColumn<Booking, Integer> colId = new TableColumn<>("ID");
         colId.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getBookingId()).asObject());
@@ -333,76 +333,6 @@ public class BorrowerPortal {
         panel.getChildren().addAll(statsBar, toolbar, table);
         contentArea.getChildren().add(panel);
         StackPane.setAlignment(panel, Pos.TOP_LEFT);
-    }
-
-    private void showAlert(Alert.AlertType type, String title, String content) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.initOwner(mainApp.getPrimaryStage());
-        alert.showAndWait();
-    }
-
-    private void showChangePasswordDialog() {
-        Dialog<Boolean> dialog = new Dialog<>();
-        dialog.setTitle("Change Password");
-        dialog.initOwner(mainApp.getPrimaryStage());
-
-        DialogPane dialogPane = dialog.getDialogPane();
-        dialogPane.setStyle("-fx-background-color: -bg-card; -fx-border-color: -border; -fx-border-radius: 12; -fx-background-radius: 12;");
-        dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        GridPane grid = new GridPane();
-        grid.setHgap(16);
-        grid.setVgap(14);
-        grid.setPadding(new Insets(24));
-
-        PasswordField currentPwdField = new PasswordField();
-        currentPwdField.setPromptText("Current Password");
-        PasswordField newPwdField = new PasswordField();
-        newPwdField.setPromptText("New Password");
-        PasswordField confirmPwdField = new PasswordField();
-        confirmPwdField.setPromptText("Confirm New Password");
-
-        Label l1 = new Label("Current"); l1.getStyleClass().add("form-label");
-        Label l2 = new Label("New");     l2.getStyleClass().add("form-label");
-        Label l3 = new Label("Confirm"); l3.getStyleClass().add("form-label");
-
-        grid.addRow(0, l1, currentPwdField);
-        grid.addRow(1, l2, newPwdField);
-        grid.addRow(2, l3, confirmPwdField);
-
-        dialogPane.setContent(grid);
-
-        dialog.setResultConverter(button -> {
-            if (button == ButtonType.OK) {
-                String current = currentPwdField.getText();
-                String newPwd = newPwdField.getText();
-                String confirm = confirmPwdField.getText();
-
-                if (!currentUser.getPasswordHash().equals(current)) {
-                    showAlert(Alert.AlertType.ERROR, "Error", "Current password is incorrect!");
-                    return false;
-                }
-                if (newPwd.isEmpty() || !newPwd.equals(confirm)) {
-                    showAlert(Alert.AlertType.ERROR, "Error", "New passwords do not match or are empty!");
-                    return false;
-                }
-                
-                boolean updated = userDAO.updatePassword(currentUser.getUserId(), newPwd);
-                if (updated) {
-                    currentUser = userDAO.getUserById(currentUser.getUserId());
-                    showAlert(Alert.AlertType.INFORMATION, "Success", "Password updated successfully!");
-                } else {
-                    showAlert(Alert.AlertType.ERROR, "Error", "Failed to update password in database.");
-                }
-                return true;
-            }
-            return false;
-        });
-
-        dialog.showAndWait();
     }
 
     private VBox buildStatCard(String value, String label, String color) {
@@ -688,4 +618,73 @@ public class BorrowerPortal {
         label.setVisible(true);
         label.setManaged(true);
     }
+    private void showAlert(Alert.AlertType type, String title, String content) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.initOwner(mainApp.getPrimaryStage());
+        alert.showAndWait();
+    }
+
+    private void showChangePasswordDialog() {
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle("Change Password");
+        dialog.initOwner(mainApp.getPrimaryStage());
+
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.setStyle("-fx-background-color: -bg-card; -fx-border-color: -border; -fx-border-radius: 12; -fx-background-radius: 12;");
+        dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(16);
+        grid.setVgap(14);
+        grid.setPadding(new Insets(24));
+
+        PasswordField currentPwdField = new PasswordField();
+        currentPwdField.setPromptText("Current Password");
+        PasswordField newPwdField = new PasswordField();
+        newPwdField.setPromptText("New Password");
+        PasswordField confirmPwdField = new PasswordField();
+        confirmPwdField.setPromptText("Confirm New Password");
+
+        Label l1 = new Label("Current"); l1.getStyleClass().add("form-label");
+        Label l2 = new Label("New");     l2.getStyleClass().add("form-label");
+        Label l3 = new Label("Confirm"); l3.getStyleClass().add("form-label");
+
+        grid.addRow(0, l1, currentPwdField);
+        grid.addRow(1, l2, newPwdField);
+        grid.addRow(2, l3, confirmPwdField);
+
+        dialogPane.setContent(grid);
+
+        dialog.setResultConverter(button -> {
+            if (button == ButtonType.OK) {
+                String current = currentPwdField.getText();
+                String newPwd = newPwdField.getText();
+                String confirm = confirmPwdField.getText();
+
+                if (!currentUser.getPasswordHash().equals(current)) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Current password is incorrect!");
+                    return false;
+                }
+                if (newPwd.isEmpty() || !newPwd.equals(confirm)) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "New passwords do not match or are empty!");
+                    return false;
+                }
+                
+                boolean updated = userDAO.updatePassword(currentUser.getUserId(), newPwd);
+                if (updated) {
+                    currentUser = userDAO.getUserById(currentUser.getUserId());
+                    showAlert(Alert.AlertType.INFORMATION, "Success", "Password updated successfully!");
+                } else {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Failed to update password in database.");
+                }
+                return true;
+            }
+            return false;
+        });
+
+        dialog.showAndWait();
+    } 
 }

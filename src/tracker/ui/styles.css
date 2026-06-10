@@ -11,56 +11,38 @@
     -fx-font-size: 13.5px;
 
     /* Theme Palette Surface Definitions (Matched to image_06709d.png) */
-    -bg-depth-0: #f5f6fa;
-    /* Canvas Layer: Soft lavender-tinted white layout background */
-    -bg-primary: #ffffff;
-    /* Card Face: Crisp pure white window/card surfaces */
-    -bg-card: #ffffff;
-    /* Uniform white panel background for clean alignment */
-    -bg-input: #f4f5f9;
-    /* Form Control & Input Fields Background */
-    -bg-hover: #f0f1f7;
-    /* Hover/Interaction Highlight Tints */
-    -bg-table-alt: #fafbfc;
-    /* Alternating Row Variations */
+    -bg-depth-0:     #f5f6fa; /* Canvas Layer: Soft lavender-tinted white layout background */
+    -bg-primary:     #ffffff; /* Card Face: Crisp pure white window/card surfaces */
+    -bg-card:        #ffffff; /* Uniform white panel background for clean alignment */
+    -bg-input:       #f4f5f9; /* Form Control & Input Fields Background */
+    -bg-hover:       #f0f1f7; /* Hover/Interaction Highlight Tints */
+    -bg-table-alt:   #fafbfc; /* Alternating Row Variations */
 
     /* Accent System Base Specs (Matched to the bright FinSet Periwinkle Purple) */
-    -accent: #785ef0;
-    /* Brand Primary Bright Amethyst/Periwinkle */
-    -accent-soft: #634ad1;
-    /* Richer Deep Purple States */
-    -accent-bright: #927df6;
-    /* Interactive Vibrant Purple Glows */
+    -accent:          #785ef0; /* Brand Primary Bright Amethyst/Periwinkle */
+    -accent-soft:     #634ad1; /* Richer Deep Purple States */
+    -accent-bright:   #927df6; /* Interactive Vibrant Purple Glows */
 
     /* Typography Color Hierarchy (Clean Slate and Midnight Inks) */
-    -text-primary: #0c111d;
-    /* High-Contrast Titles / Bold Texts (Deep Midnight Ink) */
-    -text-secondary: #475467;
-    /* Descriptive Labels / Subtitles (Slate Gray) */
-    -text-muted: #98a2b3;
-    /* Placeholders / Non-Active Elements (Muted Ash) */
-    -text-accent: #785ef0;
-    /* Tag Indicators / Selected Inline Marks */
-    -text-danger: #f04438;
-    /* System Fault Errors / Inactive Status Red */
+    -text-primary:    #0c111d; /* High-Contrast Titles / Bold Texts (Deep Midnight Ink) */
+    -text-secondary:  #475467; /* Descriptive Labels / Subtitles (Slate Gray) */
+    -text-muted:      #98a2b3; /* Placeholders / Non-Active Elements (Muted Ash) */
+    -text-accent:     #785ef0; /* Tag Indicators / Selected Inline Marks */
+    -text-danger:     #f04438; /* System Fault Errors / Inactive Status Red */
 
     /* Border Engine Constraints (Matched to the incredibly soft outlines in image_06709d.png) */
-    -border-medium: #eef0f3;
-    /* The structural ultra-soft gray card outline */
-    -border-strong: #d0d5dd;
-    /* Interactive Focused Border Outlines */
-    -border-focus: #785ef0;
-    /* Focused Active Input Borders */
+    -border-medium:   #eef0f3; /* The structural ultra-soft gray card outline */
+    -border-strong:   #d0d5dd; /* Interactive Focused Border Outlines */
+    -border-focus:    #785ef0; /* Focused Active Input Borders */
 
-    -fx-background-color: -bg-depth-0;
-    /* Window defaults to the soft canvas tint */
+    -fx-background-color: -bg-depth-0; /* Window defaults to the soft canvas tint */
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
    0. NATIVE FOCUS RING REMOVAL OVERRIDES (COMPLETELY REMOVE BOX OUTLINES)
    ═════════════════════════════════════════════════════════════════════════ */
-.button,
-.toggle-button,
+.button, 
+.toggle-button, 
 .header-nav-btn,
 .text-field,
 .password-field {
@@ -69,8 +51,8 @@
     -fx-faint-focus-color: transparent !important;
 }
 
-.button:focused,
-.toggle-button:focused,
+.button:focused, 
+.toggle-button:focused, 
 .header-nav-btn:focused,
 .button:pressed,
 .toggle-button:pressed,
@@ -80,7 +62,7 @@
     -fx-background-insets: 0 !important;
     -fx-focus-color: transparent !important;
     -fx-faint-focus-color: transparent !important;
-    -fx-effect: none !important;
+    -fx-effect: none !important; 
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
@@ -88,14 +70,13 @@
    ═════════════════════════════════════════════════════════════════════════ */
 
 /* Left Sidebar Container Syncing Background from image_06709d.png */
-.sidebar,
-.sidebar-pane {
-    -fx-background-color: -bg-depth-0;
-    -fx-border-color: transparent -border-medium transparent transparent;
+.sidebar, .sidebar-pane {
+    -fx-background-color: -bg-depth-0; 
+    -fx-border-color: transparent -border-medium transparent transparent; 
     -fx-border-width: 1.5;
     -fx-padding: 24 16 24 16;
 }
-
+   
 .login-root {
     -fx-background-color: -bg-depth-0;
 }
@@ -112,10 +93,10 @@
 }
 
 .login-card {
-    -fx-background-color: transparent;
+    -fx-background-color: transparent; 
     -fx-border-color: transparent;
     -fx-padding: 20 10 20 10;
-    -fx-effect: none;
+    -fx-effect: none; 
 }
 
 .login-title {
@@ -184,32 +165,28 @@
     -fx-font-family: "Plus Jakarta Sans", sans-serif;
     -fx-font-weight: 800;
     -fx-font-size: 28px;
-    -fx-text-fill: -accent;
-    /* The main asset periwinkle/purple tint */
+    -fx-text-fill: -accent; /* The main asset periwinkle/purple tint */
 }
 
 .metric-number-available {
     -fx-font-family: "Plus Jakarta Sans", sans-serif;
     -fx-font-weight: 800;
     -fx-font-size: 28px;
-    -fx-text-fill: #12b76a;
-    /* Vibrant emerald green */
+    -fx-text-fill: #12b76a; /* Vibrant emerald green */
 }
 
 .metric-number-borrowed {
     -fx-font-family: "Plus Jakarta Sans", sans-serif;
     -fx-font-weight: 800;
     -fx-font-size: 28px;
-    -fx-text-fill: #f79009;
-    /* Warm interactive amber */
+    -fx-text-fill: #f79009; /* Warm interactive amber */
 }
 
 .metric-number-maintenance {
     -fx-font-family: "Plus Jakarta Sans", sans-serif;
     -fx-font-weight: 800;
     -fx-font-size: 28px;
-    -fx-text-fill: -text-danger;
-    /* Clean crisp red */
+    -fx-text-fill: -text-danger; /* Clean crisp red */
 }
 
 /* Secondary Descriptive Labels Beneath the Amounts */
@@ -219,8 +196,7 @@
    3. CORE INTERFACE CONTROLS (INPUTS, BUTTONS, CHECKBOXES)
    ═════════════════════════════════════════════════════════════════════════ */
 
-.text-field,
-.password-field {
+.text-field, .password-field {
     -fx-font-family: "Plus Jakarta Sans", sans-serif;
     -fx-font-weight: 400;
     -fx-background-color: -bg-input;
@@ -234,15 +210,13 @@
     -fx-border-width: 1.5;
 }
 
-.text-field:focused,
-.password-field:focused {
+.text-field:focused, .password-field:focused {
     -fx-border-color: -border-focus;
     -fx-background-color: #ffffff;
     -fx-effect: dropshadow(gaussian, rgba(120, 94, 240, 0.12), 8, 0.2, 0, 0);
 }
 
-.text-field:hover,
-.password-field:hover {
+.text-field:hover, .password-field:hover {
     -fx-border-color: -border-strong;
 }
 
@@ -269,23 +243,19 @@
     -fx-text-fill: -text-secondary;
     -fx-font-size: 12.5px;
 }
-
 .check-box .box {
     -fx-background-color: -bg-input;
     -fx-border-color: -border-medium;
     -fx-border-radius: 5;
     -fx-background-radius: 5;
 }
-
 .check-box:hover .box {
     -fx-border-color: -border-strong;
 }
-
 .check-box:selected .box {
     -fx-background-color: -accent;
     -fx-border-color: transparent;
 }
-
 .check-box:selected .mark {
     -fx-background-color: #ffffff;
 }
@@ -299,7 +269,6 @@
     -fx-border-color: transparent;
     -fx-padding: 0;
 }
-
 .hyperlink:hover {
     -fx-text-fill: -accent-bright;
 }
@@ -309,8 +278,7 @@
    ═════════════════════════════════════════════════════════════════════════ */
 
 /* Clean Pill Pill-style controls */
-.button,
-.toggle-button {
+.button, .toggle-button {
     -fx-font-family: "Plus Jakarta Sans", sans-serif;
     -fx-font-weight: 600;
     -fx-font-size: 13px;
@@ -318,24 +286,19 @@
     -fx-background-color: transparent;
     -fx-border-color: -border-medium;
     -fx-border-width: 1.5;
-    -fx-border-radius: 20;
-    /* Fully rounded modern pill buttons */
+    -fx-border-radius: 20; /* Fully rounded modern pill buttons */
     -fx-background-radius: 20;
     -fx-padding: 8 16 8 16;
     -fx-cursor: hand;
 }
 
-.button:hover,
-.toggle-button:hover {
+.button:hover, .toggle-button:hover {
     -fx-background-color: -bg-hover;
     -fx-text-fill: -text-primary;
 }
 
 /* Active Highlight (Mirrors selected Dashboard menu button look) */
-.button:pressed,
-.button:arm,
-.btn-active,
-.toggle-button:selected {
+.button:pressed, .button:arm, .btn-active, .toggle-button:selected {
     -fx-background-color: -accent !important;
     -fx-text-fill: #ffffff !important;
     -fx-border-color: transparent !important;
@@ -347,9 +310,9 @@
     -fx-font-weight: 800;
     -fx-text-fill: -text-secondary;
     -fx-text-transform: uppercase;
-    -fx-padding: 16 8 6 8;
-    -fx-letter-spacing: 1.2px;
-    -fx-opacity: 0.7;
+    -fx-padding: 16 8 6 8;                
+    -fx-letter-spacing: 1.2px;            
+    -fx-opacity: 0.7;                    
 }
 
 .header-nav-btn {
@@ -372,8 +335,8 @@
 }
 
 /* Left Navigation Dashboard Highlight Pill */
-.header-nav-btn-active,
-.header-nav-btn:pressed,
+.header-nav-btn-active, 
+.header-nav-btn:pressed, 
 .header-nav-btn:armed {
     -fx-background-color: -accent !important;
     -fx-text-fill: #ffffff !important;
@@ -390,12 +353,10 @@
     -fx-background-color: -bg-primary;
     -fx-border-color: -border-medium;
     -fx-border-width: 1.5;
-    -fx-border-radius: 20;
-    /* High corner rounding from image_06709d.png */
+    -fx-border-radius: 20; /* High corner rounding from image_06709d.png */
     -fx-background-radius: 20;
     -fx-padding: 12;
-    -fx-effect: none;
-    /* No drop shadows, clean borders only */
+    -fx-effect: none; /* No drop shadows, clean borders only */
 }
 
 .table-view .column-header-background {
@@ -415,8 +376,7 @@
     -fx-font-family: "Plus Jakarta Sans", sans-serif;
     -fx-font-weight: 700;
     -fx-font-size: 11.5px;
-    -fx-text-fill: -text-muted;
-    /* Muted uppercase titles in table headers */
+    -fx-text-fill: -text-muted; /* Muted uppercase titles in table headers */
     -fx-text-transform: uppercase;
 }
 
@@ -428,8 +388,7 @@
 }
 
 .table-row-cell:odd {
-    -fx-background-color: -bg-primary;
-    /* Kept unified clean white */
+    -fx-background-color: -bg-primary; /* Kept unified clean white */
 }
 
 .table-row-cell:hover {
@@ -452,39 +411,29 @@
 .table-view .placeholder {
     -fx-background-color: -bg-primary;
 }
-
 .table-view .placeholder .label {
     -fx-font-family: "Plus Jakarta Sans", sans-serif;
     -fx-text-fill: -text-muted;
     -fx-font-size: 13.5px;
 }
 
-.table-view .virtual-flow,
-.table-view .corner {
+.table-view .virtual-flow, .table-view .corner {
     -fx-background-color: transparent;
 }
 
 /* Scrollbars Overlays */
-.scroll-bar:vertical,
-.scroll-bar:horizontal {
+.scroll-bar:vertical, .scroll-bar:horizontal {
     -fx-background-color: transparent;
     -fx-padding: 2;
 }
-
-.scroll-bar:vertical .thumb,
-.scroll-bar:horizontal .thumb {
+.scroll-bar:vertical .thumb, .scroll-bar:horizontal .thumb {
     -fx-background-color: #e4e7ec;
     -fx-background-radius: 10;
 }
-
-.scroll-bar:vertical .thumb:hover,
-.scroll-bar:horizontal .thumb:hover {
+.scroll-bar:vertical .thumb:hover, .scroll-bar:horizontal .thumb:hover {
     -fx-background-color: -text-muted;
 }
-
-.scroll-bar .track,
-.scroll-bar .increment-button,
-.scroll-bar .decrement-button {
+.scroll-bar .track, .scroll-bar .increment-button, .scroll-bar .decrement-button {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
 }
@@ -493,17 +442,14 @@
    6. BRIGHT AMETHYST CHARTS & WORKSPACE PANELS
    ═════════════════════════════════════════════════════════════════════════ */
 
-.chart,
-.card-panel {
+.chart, .card-panel {
     -fx-padding: 24;
     -fx-background-color: -bg-primary;
     -fx-border-color: -border-medium;
-    -fx-border-width: 1.5;
-    /* Exact crisp card depth */
-    -fx-border-radius: 20;
-    /* High round layout structure */
+    -fx-border-width: 1.5; /* Exact crisp card depth */
+    -fx-border-radius: 20; /* High round layout structure */
     -fx-background-radius: 20;
-    -fx-effect: none;
+    -fx-effect: none; 
 }
 
 .chart-title {
@@ -518,27 +464,14 @@
     -fx-font-family: "Plus Jakarta Sans", sans-serif;
     -fx-font-size: 11px;
 }
-
 .chart-pie-label-line {
     -fx-stroke: -border-strong;
 }
 
 /* Chart Color Accents matched to the financial wheel breakdown */
-.default-color0.chart-pie {
-    -fx-pie-color: -accent;
-}
-
-/* Primary Purple Theme */
-.default-color1.chart-pie {
-    -fx-pie-color: #36b37e;
-}
-
-/* Safe Mint Green */
-.default-color2.chart-pie {
-    -fx-pie-color: #ff5630;
-}
-
-/* Error Alert Orange */
+.default-color0.chart-pie { -fx-pie-color: -accent; } /* Primary Purple Theme */
+.default-color1.chart-pie { -fx-pie-color: #36b37e; } /* Safe Mint Green */
+.default-color2.chart-pie { -fx-pie-color: #ff5630; } /* Error Alert Orange */
 
 .axis {
     -fx-tick-label-fill: -text-secondary;
@@ -547,22 +480,17 @@
     -fx-tick-mark-stroke: -border-medium;
     -fx-axis-stroke: -border-medium;
 }
-
 .axis-label {
     -fx-text-fill: -text-primary;
 }
-
 .chart-bar {
     -fx-bar-fill: -accent;
     -fx-background-radius: 4 4 0 0;
 }
-
 .chart-plot-background {
     -fx-background-color: transparent;
 }
-
-.chart-horizontal-grid-lines,
-.chart-vertical-grid-lines {
+.chart-horizontal-grid-lines, .chart-vertical-grid-lines {
     -fx-stroke: -border-medium;
 }
 
@@ -570,7 +498,6 @@
     -fx-background-color: transparent;
     -fx-padding: 12 0 0 0;
 }
-
 .chart-legend-item {
     -fx-text-fill: -text-secondary;
     -fx-font-family: "Plus Jakarta Sans", sans-serif;
@@ -584,12 +511,10 @@
     -fx-text-fill: #12b76a;
     -fx-font-weight: 600;
 }
-
 .status-borrowed {
     -fx-text-fill: #f79009;
     -fx-font-weight: 600;
 }
-
 .status-maintenance {
     -fx-text-fill: -text-danger;
     -fx-font-weight: 600;
