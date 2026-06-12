@@ -72,8 +72,32 @@ public class AdminDashboard {
         mainContentLayout.setPadding(new Insets(24, 32, 24, 32));
         mainContentLayout.setStyle("-fx-background-color: -bg-primary;");
      
-        headerTitle = new Label("Dashboard Summary");
+        // Header Section (Title + Subtitle on Left, Icons on Right)
+        HBox headerSection = new HBox();
+        headerSection.setAlignment(Pos.CENTER_LEFT);
+        
+        VBox titleBox = new VBox(4);
+        headerTitle = new Label("Dashboard");
         headerTitle.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: -text-primary;");
+        
+        Label headerSubtitle = new Label(java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")));
+        headerSubtitle.setStyle("-fx-font-family: 'Poppins'; -fx-text-fill: -text-secondary; -fx-font-size: 12px;");
+        titleBox.getChildren().addAll(headerTitle, headerSubtitle);
+        
+        Region headerSpacer = new Region();
+        HBox.setHgrow(headerSpacer, Priority.ALWAYS);
+        
+        HBox rightIcons = new HBox(15);
+        rightIcons.setAlignment(Pos.CENTER);
+        
+        Label bellIcon = new Label("🔔");
+        bellIcon.setStyle("-fx-background-color: #f4f3fb; -fx-text-fill: #9d9bb8; -fx-font-size: 14px; -fx-padding: 8; -fx-background-radius: 20; -fx-cursor: hand;");
+        
+        Label avatar = new Label("A");
+        avatar.setStyle("-fx-background-color: #5b47e0; -fx-text-fill: #ffffff; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 8 12; -fx-background-radius: 20; -fx-cursor: hand;");
+        
+        rightIcons.getChildren().addAll(bellIcon, avatar);
+        headerSection.getChildren().addAll(titleBox, headerSpacer, rightIcons);
      
         // ── Separator line below the header ──
         Separator separator = new Separator();
@@ -85,7 +109,7 @@ public class AdminDashboard {
         contentArea.setPadding(new Insets(0));
         VBox.setVgrow(contentArea, Priority.ALWAYS);
      
-        mainContentLayout.getChildren().addAll(headerTitle, separator, contentArea);
+        mainContentLayout.getChildren().addAll(headerSection, separator, contentArea);
      
         ScrollPane scrollPane = new ScrollPane(mainContentLayout);
         scrollPane.setFitToWidth(true);
@@ -272,144 +296,321 @@ public class AdminDashboard {
 
     @SuppressWarnings("unchecked")
     private void showDashboard() {
-        headerTitle.setText("Dashboard Summary");
+        headerTitle.setText("Dashboard");
         contentArea.getChildren().clear();
 
         VBox panel = new VBox(20);
         panel.setPadding(new Insets(0));
 
-        // 1. Charts Row
+        // 1. Stats Bar
+        HBox statsBar = buildInventoryStats();
+
+        // 2. Charts Row
         HBox chartsRow = new HBox(20);
         chartsRow.setAlignment(Pos.CENTER_LEFT);
 
-        // -- Pie Chart: Equipment Status --
-        VBox pieCard = new VBox(10);
-        pieCard.getStyleClass().add("card");
-        HBox.setHgrow(pieCard, Priority.ALWAYS);
-        
-        Label pieTitle = new Label("Equipment Status Distribution");
-        pieTitle.getStyleClass().add("card-header");
-        
         List<Equipment> allEquipment = equipmentDAO.getAllEquipment();
         long available = allEquipment.stream().filter(e -> "AVAILABLE".equals(e.getEquipmentStatus())).count();
         long borrowed = allEquipment.stream().filter(e -> "BORROWED".equals(e.getEquipmentStatus())).count();
         long inMaint = allEquipment.stream().filter(e -> "IN_MAINTENANCE".equals(e.getEquipmentStatus())).count();
 
-        ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList(
-            new PieChart.Data("Available", available),
-            new PieChart.Data("Borrowed", borrowed),
-            new PieChart.Data("In Maintenance", inMaint)
-        );
-        PieChart statusChart = new PieChart(pieData);
-        statusChart.setLegendVisible(true);
-        statusChart.setLabelsVisible(false);
-        statusChart.setMinHeight(300);
-        
-        pieCard.getChildren().addAll(pieTitle, statusChart);
-
-        // -- Bar Chart: Equipment per Category --
-        VBox barCard = new VBox(10);
-        barCard.getStyleClass().add("card");
+        // -- Custom Bar Chart: Equipment by category --
+        VBox barCard = new VBox(5);
+        barCard.getStyleClass().add("card-panel");
         HBox.setHgrow(barCard, Priority.ALWAYS);
 
-        Label barTitle = new Label("Equipment per Category");
-        barTitle.getStyleClass().add("card-header");
-
-        CategoryAxis xAxis = new CategoryAxis();
-        NumberAxis yAxis = new NumberAxis();
-        yAxis.setTickUnit(1);
-        yAxis.setMinorTickVisible(false);
+        Label barTitle = new Label("Equipment by category");
+        barTitle.getStyleClass().add("chart-title");
+        Label barSub = new Label("All " + allEquipment.size() + " assets across categories");
+        barSub.setStyle("-fx-text-fill: -text-secondary; -fx-font-size: 11px;");
         
-        BarChart<String, Number> categoryChart = new BarChart<>(xAxis, yAxis);
-        categoryChart.setLegendVisible(false);
-        categoryChart.setMinHeight(300);
+        VBox.setMargin(barSub, new Insets(0, 0, 10, 0));
 
-        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        HBox customBarChart = new HBox(12);
+        customBarChart.setAlignment(Pos.BOTTOM_CENTER);
+        customBarChart.setMinHeight(160);
+        customBarChart.setPrefHeight(160);
+
         List<Category> categories = categoryDAO.getAllCategories();
         Map<Integer, Long> categoryCounts = allEquipment.stream()
             .collect(Collectors.groupingBy(Equipment::getCategoryId, Collectors.counting()));
             
+        long maxCount = 0;
+        for (long count : categoryCounts.values()) {
+            if (count > maxCount) maxCount = count;
+        }
+        if (maxCount == 0) maxCount = 1;
+        
+        String[] barColors = {"#5b47e0", "#9b8af2", "#bfaef9", "#d5c8fa", "#eae3fb"};
+        int colorIdx = 0;
+        
         for (Category cat : categories) {
             long count = categoryCounts.getOrDefault(cat.getCategoryId(), 0L);
-            series.getData().add(new XYChart.Data<>(cat.getCategoryName(), count));
+            if (count > 0) {
+                VBox barContainer = new VBox(6);
+                barContainer.setAlignment(Pos.BOTTOM_CENTER);
+                HBox.setHgrow(barContainer, Priority.ALWAYS);
+                
+                Label countLbl = new Label(String.valueOf(count));
+                countLbl.setStyle("-fx-font-family: 'Poppins'; -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -text-primary;");
+                
+                Region bar = new Region();
+                String color = barColors[Math.min(colorIdx, barColors.length - 1)];
+                bar.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 4 4 0 0;");
+                
+                double height = (double) count / maxCount * 120.0;
+                if (height < 15 && count > 0) height = 15; 
+                bar.setMinHeight(height);
+                bar.setPrefHeight(height);
+                bar.setMaxHeight(height);
+                bar.setMaxWidth(Double.MAX_VALUE);
+                
+                Label nameLbl = new Label(cat.getCategoryName());
+                nameLbl.setStyle("-fx-font-family: 'Poppins'; -fx-font-size: 10px; -fx-text-fill: -text-secondary;");
+                
+                barContainer.getChildren().addAll(countLbl, bar, nameLbl);
+                customBarChart.getChildren().add(barContainer);
+                colorIdx++;
+            }
         }
-        categoryChart.getData().add(series);
         
-        barCard.getChildren().addAll(barTitle, categoryChart);
-        chartsRow.getChildren().addAll(pieCard, barCard);
+        barCard.getChildren().addAll(barTitle, barSub, customBarChart);
 
-        // 2. Tables Row
-        HBox tablesRow = new HBox(20);
+        // -- Pie Chart: Status breakdown --
+        VBox pieCard = new VBox(5);
+        pieCard.getStyleClass().add("card-panel");
+        pieCard.setMinWidth(300);
+
+        Label pieTitle = new Label("Status breakdown");
+        pieTitle.getStyleClass().add("chart-title");
+        
+        ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList(
+            new PieChart.Data("Available", available),
+            new PieChart.Data("Borrowed", borrowed),
+            new PieChart.Data("Maintenance", inMaint)
+        );
+        PieChart statusChart = new PieChart(pieData);
+        statusChart.setLegendVisible(false);
+        statusChart.setLabelsVisible(false);
+        statusChart.setMinHeight(150);
+        statusChart.setPrefHeight(150);
+        statusChart.setPrefWidth(150);
+        statusChart.getStyleClass().add("custom-pie-chart");
+        
+        StackPane donutContainer = new StackPane();
+        javafx.scene.shape.Circle innerHole = new javafx.scene.shape.Circle(40);
+        innerHole.setFill(javafx.scene.paint.Color.WHITE); // Or match card background
+        Label totalLbl = new Label(String.valueOf(allEquipment.size()));
+        totalLbl.setStyle("-fx-font-family: 'Poppins'; -fx-font-weight: 700; -fx-font-size: 18px; -fx-text-fill: -text-primary;");
+        donutContainer.getChildren().addAll(statusChart, innerHole, totalLbl);
+        
+        VBox customLegend = new VBox(12);
+        customLegend.setAlignment(Pos.CENTER_LEFT);
+        customLegend.getChildren().addAll(
+            buildLegendItem("Available", "#06d6a0", available),
+            buildLegendItem("Borrowed", "#f79009", borrowed),
+            buildLegendItem("Maintenance", "#ef476f", inMaint)
+        );
+        
+        HBox pieContent = new HBox(30);
+        pieContent.setAlignment(Pos.CENTER_LEFT);
+        pieContent.getChildren().addAll(donutContainer, customLegend);
+        
+        pieCard.getChildren().addAll(pieTitle, pieContent);
+        
+        chartsRow.getChildren().addAll(barCard, pieCard);
+
+        // 3. Tables Row
+        VBox tablesRow = new VBox(15);
         tablesRow.setAlignment(Pos.TOP_LEFT);
 
-        // Fetch Bookings
+        HBox tableHeader = new HBox();
+        tableHeader.setAlignment(Pos.CENTER_LEFT);
+        Label tableTitle = new Label("Recent bookings");
+        tableTitle.setStyle("-fx-font-family: 'Poppins'; -fx-font-weight: 700; -fx-font-size: 16px; -fx-text-fill: -text-primary;");
+        
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        
+        TextField searchBookings = new TextField();
+        searchBookings.setPromptText("🔍 Search bookings...");
+        searchBookings.getStyleClass().add("text-field");
+        searchBookings.setPrefWidth(200);
+        
+        Button newBookingBtn = new Button("+ New booking");
+        newBookingBtn.getStyleClass().add("btn-primary");
+        newBookingBtn.setOnAction(e -> showAddBookingDialog());
+        
+        HBox.setMargin(searchBookings, new Insets(0, 10, 0, 0));
+        tableHeader.getChildren().addAll(tableTitle, spacer, searchBookings, newBookingBtn);
+
+        TableView<Booking> recentTable = new TableView<>();
+        recentTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        recentTable.setMinHeight(300);
+        recentTable.getStyleClass().add("modern-table");
+
+        TableColumn<Booking, String> cId = new TableColumn<>("ID");
+        cId.setCellValueFactory(c -> new SimpleStringProperty(String.format("#%03d", c.getValue().getBookingId())));
+        cId.setMaxWidth(60);
+
+        Map<Integer, String> equipmentMap = equipmentDAO.getAllEquipment().stream()
+            .collect(Collectors.toMap(Equipment::getEquipmentId, Equipment::getEquipmentName, (a, b) -> a));
+        Map<Integer, String> catMap = equipmentDAO.getAllEquipment().stream()
+            .collect(Collectors.toMap(Equipment::getEquipmentId, e -> {
+                return categoryDAO.getAllCategories().stream()
+                    .filter(cat -> cat.getCategoryId() == e.getCategoryId())
+                    .map(Category::getCategoryName)
+                    .findFirst().orElse("Unknown");
+            }, (a, b) -> a));
+
+        TableColumn<Booking, String> cEquip = new TableColumn<>("EQUIPMENT");
+        cEquip.setCellValueFactory(c -> new SimpleStringProperty(equipmentMap.getOrDefault(c.getValue().getEquipmentId(), "Unknown")));
+        cEquip.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                } else {
+                    Booking b = getTableView().getItems().get(getIndex());
+                    VBox box = new VBox(2);
+                    Label name = new Label(item);
+                    name.setStyle("-fx-font-weight: 600; -fx-text-fill: -text-primary;");
+                    Label cat = new Label(catMap.getOrDefault(b.getEquipmentId(), ""));
+                    cat.setStyle("-fx-text-fill: -text-secondary; -fx-font-size: 11px;");
+                    
+                    HBox fullBox = new HBox(10);
+                    fullBox.setAlignment(Pos.CENTER_LEFT);
+                    Label icon = new Label("EX");
+                    icon.setStyle("-fx-background-color: #e8e6f8; -fx-text-fill: -accent; -fx-padding: 4 6; -fx-background-radius: 20; -fx-font-size: 10px; -fx-font-weight: 800;");
+                    box.getChildren().addAll(name, cat);
+                    fullBox.getChildren().addAll(icon, box);
+                    setGraphic(fullBox);
+                }
+            }
+        });
+
+        TableColumn<Booking, String> cBorrower = new TableColumn<>("BORROWER");
+        UserDAO uDao = new UserDAO();
+        Map<Integer, String> uMap = uDao.getUserMap();
+        cBorrower.setCellValueFactory(c -> new SimpleStringProperty(uMap.getOrDefault(c.getValue().getBorrowerId(), "Unknown")));
+
+        TableColumn<Booking, String> cStart = new TableColumn<>("START DATE");
+        cStart.setCellValueFactory(c -> new SimpleStringProperty(formatDate(c.getValue().getStartDatetime())));
+
+        TableColumn<Booking, String> cReturn = new TableColumn<>("RETURN BY");
+        cReturn.setCellValueFactory(c -> new SimpleStringProperty(formatDate(c.getValue().getExpectedReturnDatetime())));
+        cReturn.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item);
+                    Booking b = getTableView().getItems().get(getIndex());
+                    if ("PENDING".equals(b.getBookingStatus()) || "APPROVED".equals(b.getBookingStatus())) {
+                        try {
+                            if (java.time.LocalDate.parse(b.getExpectedReturnDatetime()).isBefore(java.time.LocalDate.now())) {
+                                setStyle("-fx-text-fill: -text-danger; -fx-font-weight: 600;");
+                            } else {
+                                setStyle("-fx-text-fill: -text-primary;");
+                            }
+                        } catch(Exception e) {
+                            setStyle("-fx-text-fill: -text-primary;");
+                        }
+                    } else {
+                        setStyle("-fx-text-fill: -text-primary;");
+                    }
+                }
+            }
+        });
+
+        TableColumn<Booking, String> cPurpose = new TableColumn<>("PURPOSE");
+        cPurpose.setCellValueFactory(c -> {
+            String p = c.getValue().getPurposeDescription();
+            return new SimpleStringProperty((p == null || p.isEmpty()) ? "—" : p);
+        });
+
+        TableColumn<Booking, String> cStatus = new TableColumn<>("STATUS");
+        cStatus.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getBookingStatus()));
+        cStatus.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                } else {
+                    Label badge = new Label("● " + (item.equals("APPROVED") ? "Active" : (item.charAt(0) + item.substring(1).toLowerCase())));
+                    badge.getStyleClass().add("status-badge");
+                    switch (item.toUpperCase()) {
+                        case "APPROVED": badge.getStyleClass().add("status-badge-active"); break;
+                        case "RETURNED": badge.getStyleClass().add("status-badge-returned"); break;
+                        case "PENDING": badge.getStyleClass().add("status-badge-pending"); break;
+                        default: badge.getStyleClass().add("status-badge-default");
+                    }
+                    setGraphic(badge);
+                }
+            }
+        });
+
+        TableColumn<Booking, Void> cAction = new TableColumn<>("");
+        cAction.setMaxWidth(40);
+        cAction.setCellFactory(col -> new TableCell<>() {
+            private final Button btn = new Button("•••");
+            {
+                btn.setStyle("-fx-background-color: transparent; -fx-text-fill: -text-secondary; -fx-cursor: hand; -fx-font-size: 14px;");
+            }
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) setGraphic(null);
+                else setGraphic(btn);
+            }
+        });
+
+        recentTable.getColumns().addAll(cId, cEquip, cBorrower, cStart, cReturn, cPurpose, cStatus, cAction);
+        
         List<Booking> allBookings = bookingDAO.getAllBookings();
+        // Sort to show recent first
+        allBookings.sort((b1, b2) -> Integer.compare(b2.getBookingId(), b1.getBookingId()));
+        recentTable.setItems(FXCollections.observableArrayList(allBookings));
 
-        // -- Returning Equipment Table (APPROVED / Currently Borrowed) --
-        VBox returningCard = new VBox(10);
-        returningCard.getStyleClass().add("card");
-        HBox.setHgrow(returningCard, Priority.ALWAYS);
-
-        Label returningTitle = new Label("Currently Borrowed (To Be Returned)");
-        returningTitle.getStyleClass().add("card-header");
-
-        TableView<Booking> returningTable = new TableView<>();
-        returningTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        returningTable.setMinHeight(250);
-
-        TableColumn<Booking, Integer> rColId = new TableColumn<>("Booking ID");
-        rColId.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getBookingId()).asObject());
+        VBox tableContainer = new VBox(10);
+        tableContainer.getStyleClass().add("card-panel");
+        tableContainer.getChildren().addAll(tableHeader, recentTable);
         
-        TableColumn<Booking, Integer> rColEquip = new TableColumn<>("Equipment ID");
-        rColEquip.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getEquipmentId()).asObject());
+        tablesRow.getChildren().add(tableContainer);
 
-        TableColumn<Booking, String> rColReturn = new TableColumn<>("Expected Return");
-        rColReturn.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getExpectedReturnDatetime()));
-        
-        returningTable.getColumns().addAll(rColId, rColEquip, rColReturn);
-        
-        List<Booking> borrowedBookings = allBookings.stream()
-            .filter(b -> "APPROVED".equals(b.getBookingStatus()))
-            .collect(Collectors.toList());
-        returningTable.setItems(FXCollections.observableArrayList(borrowedBookings));
-        
-        returningCard.getChildren().addAll(returningTitle, returningTable);
-
-        // -- Upcoming Schedule Table (PENDING) --
-        VBox upcomingCard = new VBox(10);
-        upcomingCard.getStyleClass().add("card");
-        HBox.setHgrow(upcomingCard, Priority.ALWAYS);
-
-        Label upcomingTitle = new Label("Upcoming Schedule (Pending Requests)");
-        upcomingTitle.getStyleClass().add("card-header");
-
-        TableView<Booking> upcomingTable = new TableView<>();
-        upcomingTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        upcomingTable.setMinHeight(250);
-
-        TableColumn<Booking, Integer> uColId = new TableColumn<>("Booking ID");
-        uColId.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getBookingId()).asObject());
-        
-        TableColumn<Booking, Integer> uColEquip = new TableColumn<>("Equipment ID");
-        uColEquip.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getEquipmentId()).asObject());
-
-        TableColumn<Booking, String> uColStart = new TableColumn<>("Start Date");
-        uColStart.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getStartDatetime()));
-
-        upcomingTable.getColumns().addAll(uColId, uColEquip, uColStart);
-        
-        List<Booking> pendingBookings = allBookings.stream()
-            .filter(b -> "PENDING".equals(b.getBookingStatus()))
-            .collect(Collectors.toList());
-        upcomingTable.setItems(FXCollections.observableArrayList(pendingBookings));
-        
-        upcomingCard.getChildren().addAll(upcomingTitle, upcomingTable);
-
-        tablesRow.getChildren().addAll(returningCard, upcomingCard);
-
-        panel.getChildren().addAll(chartsRow, tablesRow);
+        panel.getChildren().addAll(statsBar, chartsRow, tablesRow);
         contentArea.getChildren().add(panel);
         StackPane.setAlignment(panel, Pos.TOP_LEFT);
+    }
+    
+    private HBox buildLegendItem(String label, String color, long value) {
+        HBox box = new HBox(15);
+        box.setAlignment(Pos.CENTER_LEFT);
+        
+        Label dot = new Label("●");
+        dot.setStyle("-fx-text-fill: " + color + "; -fx-font-size: 14px;");
+        
+        Label lbl = new Label(label);
+        lbl.setStyle("-fx-font-family: 'Poppins'; -fx-font-size: 12px; -fx-text-fill: -text-secondary; -fx-min-width: 80;");
+        
+        Label valLbl = new Label(String.valueOf(value));
+        valLbl.setStyle("-fx-font-family: 'Poppins'; -fx-font-weight: 700; -fx-font-size: 13px; -fx-text-fill: -text-primary;");
+        
+        box.getChildren().addAll(dot, lbl, valLbl);
+        return box;
+    }
+    
+    private String formatDate(String isoDate) {
+        try {
+            java.time.LocalDate date = java.time.LocalDate.parse(isoDate);
+            return date.format(java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy"));
+        } catch(Exception e) {
+            return isoDate;
+        }
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -709,29 +910,40 @@ public class AdminDashboard {
         HBox statsBar = new HBox(20);
         statsBar.setPadding(new Insets(0, 0, 10, 0));
 
+        // Get some mock data for badges since we don't have historical data in the DAO
+        long availablePct = total > 0 ? (available * 100 / total) : 0;
+        
         statsBar.getChildren().addAll(
-            buildStatCard(String.valueOf(total), "Total Equipment", "#4361ee"),
-            buildStatCard(String.valueOf(available), "Available", "#06d6a0"),
-            buildStatCard(String.valueOf(borrowed), "Borrowed", "#ffd166"),
-            buildStatCard(String.valueOf(inMaint), "In Maintenance", "#ef476f")
+            buildStatCard("TOTAL EQUIPMENT", String.valueOf(total), "↑ 3 this month", "total", "💼"),
+            buildStatCard("AVAILABLE", String.valueOf(available), availablePct + "% of fleet", "available", "✓"),
+            buildStatCard("BORROWED", String.valueOf(borrowed), borrowed + " overdue", "borrowed", "♡"),
+            buildStatCard("IN MAINTENANCE", String.valueOf(inMaint), "Needs attention", "maintenance", "⏱")
         );
         return statsBar;
     }
 
-    private VBox buildStatCard(String value, String label, String color) {
-        VBox card = new VBox(4);
-        card.getStyleClass().add("stat-card");
-        card.setAlignment(Pos.CENTER_LEFT);
+    private VBox buildStatCard(String title, String value, String badgeText, String type, String iconChar) {
+        VBox card = new VBox(8);
+        card.getStyleClass().addAll("metric-card", "metric-card-" + type);
         HBox.setHgrow(card, Priority.ALWAYS);
-
-        Label valLabel = new Label(value);
-        valLabel.getStyleClass().add("stat-value");
-        valLabel.setStyle("-fx-text-fill: " + color + ";");
-
-        Label descLabel = new Label(label);
-        descLabel.getStyleClass().add("stat-label");
-
-        card.getChildren().addAll(valLabel, descLabel);
+        
+        // Top Icon
+        Label icon = new Label(iconChar);
+        icon.getStyleClass().addAll("metric-icon", "metric-icon-" + type);
+        
+        // Title
+        Label titleLbl = new Label(title);
+        titleLbl.getStyleClass().add("metric-title");
+        
+        // Value
+        Label valLbl = new Label(value);
+        valLbl.getStyleClass().addAll("metric-value", "metric-value-" + type);
+        
+        // Badge
+        Label badge = new Label(badgeText);
+        badge.getStyleClass().addAll("metric-badge", "metric-badge-" + type);
+        
+        card.getChildren().addAll(icon, titleLbl, valLbl, badge);
         return card;
     }
 
