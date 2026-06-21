@@ -215,6 +215,11 @@ public class AdminDashboard {
         changePwdBtn.setMaxWidth(Double.MAX_VALUE);
         changePwdBtn.setOnAction(e -> showChangePasswordDialog());
      
+        Button settingsBtn = new Button("⚙️ Settings");
+        settingsBtn.getStyleClass().add("side-panel-btn");
+        settingsBtn.setMaxWidth(Double.MAX_VALUE);
+        settingsBtn.setOnAction(e -> showUserSettingsDialog());
+
         Button logoutBtn = new Button("⏻  Logout");
         logoutBtn.getStyleClass().add("side-panel-btn-logout");
         logoutBtn.setMaxWidth(Double.MAX_VALUE);
@@ -225,7 +230,7 @@ public class AdminDashboard {
             mainApp.showLoginScreen();
         });
      
-        userStrip.getChildren().addAll(changePwdBtn, logoutBtn);
+        userStrip.getChildren().addAll(changePwdBtn, settingsBtn, logoutBtn);
      
         // ── ASSEMBLE SIDEBAR ────────────────────────────────────
         sidebar.getChildren().addAll(brandingBlock, navBtnContainer, userStrip);
@@ -2543,6 +2548,71 @@ public class AdminDashboard {
                     showAlert(Alert.AlertType.INFORMATION, "Success", "Password updated successfully!");
                 } else {
                     showAlert(Alert.AlertType.ERROR, "Error", "Failed to update password in database.");
+                }
+                return true;
+            }
+            return false;
+        });
+
+        dialog.showAndWait();
+    }
+
+    private void showUserSettingsDialog() {
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle("User Settings");
+        dialog.initOwner(mainApp.getPrimaryStage());
+
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.setStyle("-fx-background-color: -bg-card; -fx-border-color: -border; -fx-border-radius: 12; -fx-background-radius: 12;");
+        dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(16);
+        grid.setVgap(14);
+        grid.setPadding(new Insets(24));
+
+        TextField fullNameField = new TextField();
+        fullNameField.setPromptText("Full Name");
+        if (currentUser.getFullName() != null) fullNameField.setText(currentUser.getFullName());
+
+        TextField emailField = new TextField();
+        emailField.setPromptText("Email Address");
+        if (currentUser.getEmail() != null) emailField.setText(currentUser.getEmail());
+
+        ComboBox<String> themeBox = new ComboBox<>();
+        themeBox.getItems().addAll("LIGHT", "DARK");
+        String currentTheme = currentUser.getThemePreference() != null ? currentUser.getThemePreference() : "DARK";
+        themeBox.setValue(currentTheme);
+
+        Label l1 = new Label("Full Name"); l1.getStyleClass().add("form-label");
+        Label l2 = new Label("Email");     l2.getStyleClass().add("form-label");
+        Label l3 = new Label("Theme");     l3.getStyleClass().add("form-label");
+
+        grid.addRow(0, l1, fullNameField);
+        grid.addRow(1, l2, emailField);
+        grid.addRow(2, l3, themeBox);
+
+        dialogPane.setContent(grid);
+
+        dialog.setResultConverter(button -> {
+            if (button == ButtonType.OK) {
+                currentUser.setFullName(fullNameField.getText());
+                currentUser.setEmail(emailField.getText());
+                currentUser.setThemePreference(themeBox.getValue());
+                
+                boolean updated = userDAO.updateUserSettings(currentUser);
+                if (updated) {
+                    // Apply theme immediately
+                    if ("LIGHT".equalsIgnoreCase(themeBox.getValue())) {
+                        if (!rootView.getScene().getRoot().getStyleClass().contains("light-theme")) {
+                            rootView.getScene().getRoot().getStyleClass().add("light-theme");
+                        }
+                    } else {
+                        rootView.getScene().getRoot().getStyleClass().remove("light-theme");
+                    }
+                    showAlert(Alert.AlertType.INFORMATION, "Success", "Settings updated successfully!");
+                } else {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Failed to update settings in database.");
                 }
                 return true;
             }

@@ -215,6 +215,14 @@ public class LoginScreen {
             User user = userDAO.authenticate(username, hash);
 
             if (user != null) {
+                if ("LIGHT".equalsIgnoreCase(user.getThemePreference())) {
+                    if (!view.getScene().getRoot().getStyleClass().contains("light-theme")) {
+                        view.getScene().getRoot().getStyleClass().add("light-theme");
+                    }
+                } else {
+                    view.getScene().getRoot().getStyleClass().remove("light-theme");
+                }
+
                 if ("ADMIN".equals(user.getUserRole())) {
                     mainApp.showAdminDashboard(user);
                 } else {

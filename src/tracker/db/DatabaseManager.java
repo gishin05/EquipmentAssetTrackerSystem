@@ -32,7 +32,10 @@ public class DatabaseManager {
                 "user_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "username TEXT NOT NULL UNIQUE, " +
                 "password_hash TEXT NOT NULL, " +
-                "user_role TEXT NOT NULL" +
+                "user_role TEXT NOT NULL, " +
+                "email TEXT, " +
+                "full_name TEXT, " +
+                "theme_preference TEXT" +
                 ");";
 
         String createEquipmentTable = "CREATE TABLE IF NOT EXISTS equipment (" +
@@ -118,6 +121,11 @@ public class DatabaseManager {
             } catch (SQLException ignored) {
                 // Column already exists — safe to ignore
             }
+            
+            // Migration: add user profile columns if they don't exist
+            try { stmt.execute("ALTER TABLE users ADD COLUMN email TEXT"); } catch (SQLException ignored) {}
+            try { stmt.execute("ALTER TABLE users ADD COLUMN full_name TEXT"); } catch (SQLException ignored) {}
+            try { stmt.execute("ALTER TABLE users ADD COLUMN theme_preference TEXT"); } catch (SQLException ignored) {}
             
             insertDefaultAdmin(conn);
         } catch (SQLException e) {

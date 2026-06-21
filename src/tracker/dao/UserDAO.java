@@ -20,7 +20,10 @@ public class UserDAO {
                         rs.getInt("user_id"),
                         rs.getString("username"),
                         rs.getString("password_hash"),
-                        rs.getString("user_role")
+                        rs.getString("user_role"),
+                        rs.getString("email"),
+                        rs.getString("full_name"),
+                        rs.getString("theme_preference")
                     );
                 }
             }
@@ -31,13 +34,16 @@ public class UserDAO {
     }
     
     public boolean registerUser(User user) {
-        String query = "INSERT INTO users (username, password_hash, user_role) VALUES (?, ?, ?)";
+        String query = "INSERT INTO users (username, password_hash, user_role, email, full_name, theme_preference) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             
             pstmt.setString(1, user.getUsername());
             pstmt.setString(2, user.getPasswordHash());
             pstmt.setString(3, user.getUserRole());
+            pstmt.setString(4, user.getEmail());
+            pstmt.setString(5, user.getFullName());
+            pstmt.setString(6, user.getThemePreference());
             
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -59,7 +65,10 @@ public class UserDAO {
                         rs.getInt("user_id"),
                         rs.getString("username"),
                         rs.getString("password_hash"),
-                        rs.getString("user_role")
+                        rs.getString("user_role"),
+                        rs.getString("email"),
+                        rs.getString("full_name"),
+                        rs.getString("theme_preference")
                     );
                 }
             }
@@ -95,7 +104,10 @@ public class UserDAO {
                     rs.getInt("user_id"),
                     rs.getString("username"),
                     rs.getString("password_hash"),
-                    rs.getString("user_role")
+                    rs.getString("user_role"),
+                    rs.getString("email"),
+                    rs.getString("full_name"),
+                    rs.getString("theme_preference")
                 ));
             }
         } catch (SQLException e) {
@@ -115,7 +127,10 @@ public class UserDAO {
                         rs.getInt("user_id"),
                         rs.getString("username"),
                         rs.getString("password_hash"),
-                        rs.getString("user_role")
+                        rs.getString("user_role"),
+                        rs.getString("email"),
+                        rs.getString("full_name"),
+                        rs.getString("theme_preference")
                     );
                 }
             }
@@ -131,6 +146,21 @@ public class UserDAO {
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             pstmt.setString(1, newPasswordHash);
             pstmt.setInt(2, userId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean updateUserSettings(User user) {
+        String query = "UPDATE users SET email = ?, full_name = ?, theme_preference = ? WHERE user_id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setString(1, user.getEmail());
+            pstmt.setString(2, user.getFullName());
+            pstmt.setString(3, user.getThemePreference());
+            pstmt.setInt(4, user.getUserId());
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
