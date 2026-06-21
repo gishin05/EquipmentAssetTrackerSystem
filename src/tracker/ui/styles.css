@@ -10,7 +10,7 @@
     -fx-font-family: "Poppins", "Segoe UI", sans-serif;
     -fx-font-size: 13.5px;
 
-    -bg-depth-0: #f4f3fb;
+    -bg-depth-0: #f4f2fc; /* RGB(244,242,252) */
     -bg-primary: #ffffff;
     -bg-card: #ffffff;
     -bg-input: #ffffff;
@@ -31,7 +31,7 @@
     -border-strong: #d0d5dd;
     -border-focus: #5b47e0;
 
-    -fx-background-color: #f4f3fb !important;
+    -fx-background-color: -bg-depth-0 !important;
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
@@ -108,11 +108,60 @@
     -fx-text-fill: #9d9bb8;
     -fx-padding: 0 6 0 0;
 }
+
+/* Large background card used as an adjustable canvas behind the UI. The
+   Region is added programmatically and marked mouseTransparent so it won't
+   block interaction; styles here control its look and can be changed at will. */
+.app-bg-card {
+    -fx-background-color: -bg-depth-0;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-border-color: transparent;
+    -fx-effect: dropshadow(gaussian, rgba(26,24,37,0.04), 40, 0.18, 0, 12);
+}
+
+/* Main content area (center panel beside sidebar and under header) */
+.main-content {
+    -fx-background-color: -bg-depth-0; /* canvas color */
+}
+
+/* Ensure the StackPane wrapper for content doesn't add its own white background */
+.content-area {
+    -fx-background-color: transparent;
+}
+
+/* Reduce password bullet size specifically inside the login right panel */
+.login-right-panel .password-field {
+    -fx-font-size: 12px; /* slight control font-size */
+}
+
+/* Ensure the actual text/echo glyph inside the PasswordField uses a smaller font
+   (echo character is rendered by the inner text node). */
+.login-right-panel .password-field .text {
+    -fx-font-size: 12px; /* reduces the bullet/echo glyph size */
+    -fx-font-family: "Poppins", sans-serif;
+}
+
+/* Top header/navigation bar kept white for contrast */
+.header-bar {
+    -fx-background-color: -bg-primary; /* white */
+    -fx-background-insets: 0; /* ensure the background fills the region fully when margins are used */
+    -fx-background-radius: 8 8 0 0; /* subtle rounded top corners if desired */
+    -fx-border-color: transparent;
+}
 .nav-text {
     -fx-font-family: "Poppins", sans-serif;
     -fx-font-weight: 600;
     -fx-font-size: 15px;
     -fx-text-fill: #9d9bb8;
+}
+
+/* Subtitle shown above tables / toolbars (e.g. booking requests, maintenance logs, audit logs)
+   Use explicit black color for improved contrast as requested. */
+.content-subtitle {
+    -fx-font-family: "Poppins", sans-serif;
+    -fx-font-size: 13px;
+    -fx-text-fill: #000000; /* black */
 }
 
 /* When the nav button is active/hovered/pressed, make icon + text white */
@@ -143,7 +192,9 @@
    ═════════════════════════════════════════════════════════════════════════ */
 
 .login-root {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #e8e6f8, #eaf0fb);
+    /* Use the global canvas color instead of the older gradient so the
+       application background is consistent with the requested RGB(244,242,252) */
+    -fx-background-color: -bg-depth-0;
     -fx-alignment: center;
 }
 
@@ -594,6 +645,20 @@
 .header-nav-btn:armed,
 .header-nav-btn:pressed {
     -fx-background-color: #231f35 !important;
+    -fx-text-fill: #ffffff !important;
+}
+
+/* Ensure the currently active sidebar nav button keeps the violet active
+   style when hovered/armed/pressed. This selector is more specific than
+   the generic hover rules above so it will take precedence (uses the
+   explicit active class on the same element). */
+.button.header-nav-btn.header-nav-btn-active:hover,
+.button.header-nav-btn.header-nav-btn-active:armed,
+.button.header-nav-btn.header-nav-btn-active:pressed,
+.header-nav-btn.header-nav-btn-active:hover,
+.header-nav-btn.header-nav-btn-active:armed,
+.header-nav-btn.header-nav-btn-active:pressed {
+    -fx-background-color: #5b47e0 !important;
     -fx-text-fill: #ffffff !important;
 }
 
@@ -1147,4 +1212,104 @@
     outline: none !important;
     border: none !important;
     box-shadow: none !important;
+}
+
+/* ==========================================================================
+   ADDITIONAL STATUS COLOR SCHEME
+   - Provide clear semantic colors for booking / inventory states (available/returned)
+   - Provide badge variants suitable for use inside tables and lists
+   ========================================================================== */
+
+/* Text-only status indicators (inline labels) */
+.status-available, .status-returned {
+    -fx-text-fill: #138a3e; /* stronger green for accessibility */
+    -fx-font-weight: 700;
+}
+
+.status-available { -fx-text-fill: #12b76a; }
+.status-returned { -fx-text-fill: #12b76a; }
+
+/* Badge-style status variants (background + text) */
+.status-badge-available {
+    -fx-text-fill: #0b5d36;
+    -fx-background-color: rgba(18,183,106,0.12);
+    -fx-font-weight: 700;
+    -fx-background-radius: 12;
+}
+.status-badge-returned {
+    -fx-text-fill: #0b5d36;
+    -fx-background-color: rgba(18,183,106,0.12);
+    -fx-font-weight: 700;
+    -fx-background-radius: 12;
+}
+
+/* Provide small pill variant used inside table cells */
+.status-pill {
+    -fx-font-family: "Poppins", sans-serif;
+    -fx-font-size: 11px;
+    -fx-padding: 4 8;
+    -fx-background-radius: 10;
+    -fx-alignment: center;
+}
+
+/* ==========================================================================
+   TABLE COMPACT MODE — reduce blank/empty table areas so only rows with
+   content are visually prominent. This helps with perceived empty space in
+   table views where unused rows or large viewport padding appear.
+   Note: some behavioral adjustments (like shrinking height to content) may
+   require Java code changes; these CSS rules mitigate most visual issues.
+   ========================================================================== */
+
+/* Remove extra padding from virtual flow and viewport */
+.table-view .virtual-flow,
+.modern-table .virtual-flow {
+    -fx-padding: 0; /* collapse vertical padding */
+    -fx-background-color: transparent;
+}
+
+.table-view .virtual-flow .viewport {
+    -fx-padding: 0;
+}
+
+/* Reduce header container gaps that can introduce empty areas */
+.modern-table .column-header-background {
+    -fx-padding: 0 4 0 4; /* tighter header padding */
+    -fx-min-height: 36;
+}
+
+/* Make rows compact and avoid large blank row height */
+.table-view .table-row-cell,
+.modern-table .table-row-cell {
+    -fx-min-height: 0;          /* allow rows to collapse when empty */
+    -fx-pref-height: 44;        /* sensible default for content rows */
+    -fx-cell-size: 44;          /* ensures consistent measured cell size */
+}
+
+/* Hide the default placeholder block visually while keeping semantic placeholder
+   accessible for empty-state messaging rendered in code (set opacity to low). */
+.modern-table .placeholder,
+.table-view .placeholder {
+    -fx-opacity: 0.9; /* slightly transparent so it's less visually 'blank' */
+    -fx-padding: 12;
+    -fx-background-color: transparent; /* avoid large solid block */
+}
+
+/* Remove visible vertical whitespace when table has few rows by shrinking the
+   bottom padding on the flow content */
+.table-view .virtual-flow .content {
+    -fx-padding: 0;
+}
+
+/* When a table cell is empty, keep it visually minimal */
+.modern-table .table-cell:empty {
+    -fx-padding: 0 12; /* keep left/right spacing but remove vertical space */
+    -fx-background-color: transparent;
+}
+
+/* Provide a utility class developers can apply to TableView to force it to
+   visually collapse any remaining empty-area (requires Java side to set)
+   Example: tableView.getStyleClass().add("table-compact"); */
+.table-compact {
+    -fx-max-height: -1;      /* let layout compute height from content */
+    -fx-min-height: 0;
 }

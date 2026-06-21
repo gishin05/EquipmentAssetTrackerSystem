@@ -63,7 +63,8 @@ public class BorrowerPortal {
         // ── Main Content Container ──
         VBox mainContentLayout = new VBox(20);
         mainContentLayout.setPadding(new Insets(24, 32, 24, 32));
-        mainContentLayout.setStyle("-fx-background-color: -bg-primary;");
+        // Use named CSS class so center area background can be controlled from styles.css
+        mainContentLayout.getStyleClass().add("main-content");
 
         headerTitle = new Label("My Bookings");
         headerTitle.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: -text-primary;");
@@ -255,6 +256,7 @@ public class BorrowerPortal {
         TableView<Booking> table = new TableView<>();
         table.setId("my-bookings-table");
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        table.getStyleClass().add("modern-table");
         VBox.setVgrow(table, Priority.ALWAYS);
         table.setMinHeight(450);
 

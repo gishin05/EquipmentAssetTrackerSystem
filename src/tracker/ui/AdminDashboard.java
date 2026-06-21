@@ -68,13 +68,22 @@ public class AdminDashboard {
         mainView.setLeft(sidebar);
      
         // ── Main Content Container ──
-        VBox mainContentLayout = new VBox(20);
+        // Use zero vertical spacing so the header can visually flush to the separator;
+        // specific vertical gaps are managed via padding/margins on the children.
+        VBox mainContentLayout = new VBox(0);
         mainContentLayout.setPadding(new Insets(24, 32, 24, 32));
-        mainContentLayout.setStyle("-fx-background-color: -bg-primary;");
+        // Use a named CSS class so the background can be controlled from styles.css
+        mainContentLayout.getStyleClass().add("main-content");
      
         // Header Section (Title + Subtitle on Left, Icons on Right)
         HBox headerSection = new HBox();
         headerSection.setAlignment(Pos.CENTER_LEFT);
+        // Use shared header-bar CSS so the top bar remains white and consistent
+        headerSection.getStyleClass().add("header-bar");
+        // Add internal padding so the header has vertical space and matches other content
+        headerSection.setPadding(new Insets(18, 32, 18, 32));
+        // Pull the header horizontally to the edges of the content area (matches separator negative margins)
+        VBox.setMargin(headerSection, new Insets(0, -32, 0, -32));
         
         VBox titleBox = new VBox(4);
         headerTitle = new Label("Dashboard");
@@ -674,6 +683,7 @@ public class AdminDashboard {
         TableView<Equipment> table = new TableView<>();
         table.setId("equipment-table");
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        table.getStyleClass().add("modern-table");
         VBox.setVgrow(table, Priority.ALWAYS);
         table.setMinHeight(500);
 
@@ -1307,6 +1317,7 @@ public class AdminDashboard {
         TableView<Booking> table = new TableView<>();
         table.setId("bookings-table");
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        table.getStyleClass().add("modern-table");
         VBox.setVgrow(table, Priority.ALWAYS);
         table.setMinHeight(500);
 
@@ -1876,6 +1887,7 @@ public class AdminDashboard {
         TableView<MaintenanceLog> table = new TableView<>();
         table.setId("maintenance-table");
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        table.getStyleClass().add("modern-table");
         VBox.setVgrow(table, Priority.ALWAYS);
         table.setMinHeight(500);
 
@@ -2269,6 +2281,7 @@ public class AdminDashboard {
         TableView<ChangeLog> table = new TableView<>();
         table.setId("changelog-table-" + tableName.toLowerCase());
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        table.getStyleClass().add("modern-table");
         VBox.setVgrow(table, Priority.ALWAYS);
         table.setMinHeight(450);
 
