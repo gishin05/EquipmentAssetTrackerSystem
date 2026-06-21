@@ -174,19 +174,19 @@ public class AdminDashboard {
 
         // MAIN SYSTEM
         navBtnContainer.getChildren().add(buildNavCategory("MAIN SYSTEM"));
-        Button btnDashboard  = createNavButton("Dashboard",  () -> showDashboard());
-        Button btnInventory  = createNavButton("Inventory",  () -> showInventory());
+        Button btnDashboard  = createNavButton("Dashboard", "🏠", () -> showDashboard());
+        Button btnInventory  = createNavButton("Inventory", "📦", () -> showInventory());
         navBtnContainer.getChildren().addAll(btnDashboard, btnInventory);
 
         // OPERATIONS
         navBtnContainer.getChildren().add(buildNavCategory("OPERATIONS"));
-        Button btnBooking     = createNavButton("Booking Requests", () -> showLoanApprovals());
-        Button btnMaintenance = createNavButton("Maintenance Logs",  () -> showMaintenance());
+        Button btnBooking     = createNavButton("Booking Requests", "📥", () -> showLoanApprovals());
+        Button btnMaintenance = createNavButton("Maintenance Logs", "🛠", () -> showMaintenance());
         navBtnContainer.getChildren().addAll(btnBooking, btnMaintenance);
 
         // SYSTEM
         navBtnContainer.getChildren().add(buildNavCategory("SYSTEM"));
-        Button btnAuditLogs   = createNavButton("Logs",  () -> showAuditLogs());
+        Button btnAuditLogs   = createNavButton("Logs", "📜", () -> showAuditLogs());
         navBtnContainer.getChildren().add(btnAuditLogs);
         
 
@@ -249,13 +249,26 @@ public class AdminDashboard {
     }
     
 
-    private Button createNavButton(String text, Runnable action) {
-        Button btn = new Button(text);
+    private Button createNavButton(String text, String icon, Runnable action) {
+        Button btn = new Button();
+        // Build an HBox with an icon label and a text label so we can style them independently
+        HBox content = new HBox(10);
+        content.setAlignment(Pos.CENTER_LEFT);
+
+        Label iconLbl = new Label(icon);
+        iconLbl.getStyleClass().add("nav-icon");
+
+        Label textLbl = new Label(text);
+        textLbl.getStyleClass().add("nav-text");
+
+        content.getChildren().addAll(iconLbl, textLbl);
+        btn.setGraphic(content);
+
         btn.getStyleClass().add("header-nav-btn");
         btn.setMaxWidth(Double.MAX_VALUE);
         btn.setAlignment(Pos.CENTER_LEFT);
-        
-        // Inline code fix: Forces JavaFX to completely drop its built-in blue outline engine 
+
+        // Inline code fix: Forces JavaFX to completely drop its built-in blue outline engine
         // directly on the control instance so it uses only your CSS class rules
         btn.setStyle(
             "-fx-background-insets: 0;" +
@@ -644,7 +657,8 @@ public class AdminDashboard {
         searchField.setMinWidth(300);
 
         Button addBtn = new Button("+ Add Equipment");
-        addBtn.getStyleClass().addAll("button", "btn-success");
+        // Make the in-panel 'Add' button use the violet primary style by default
+        addBtn.getStyleClass().addAll("button", "btn-primary");
         addBtn.setId("add-equipment");
 
         Region spacer = new Region();
@@ -772,6 +786,7 @@ public class AdminDashboard {
         dialog.initOwner(mainApp.getPrimaryStage());
 
         DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.getStyleClass().add("form-dialog");
         dialogPane.setStyle(
             "-fx-background-color: #1a1a2e; -fx-border-color: #2a2a45; -fx-border-radius: 16; -fx-background-radius: 16;"
         );
@@ -781,10 +796,8 @@ public class AdminDashboard {
         Button closeBtn = (Button) dialogPane.lookupButton(ButtonType.CLOSE);
         if (closeBtn != null) {
             closeBtn.getStyleClass().addAll("button", "btn-primary");
-            closeBtn.setStyle(
-                "-fx-background-color: linear-gradient(to right, #4361ee, #3a86ff); " +
-                "-fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8 20; -fx-cursor: hand;"
-            );
+            // Keep padding/cursor here; color comes from the btn-primary CSS class
+            closeBtn.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold;");
         }
 
         Map<Integer, String> categoryMap = categoryDAO.getAllCategories().stream()
@@ -799,6 +812,7 @@ public class AdminDashboard {
         VBox content = new VBox(20);
         content.setPadding(new Insets(24));
         content.setMinWidth(460);
+        content.getStyleClass().add("modal-card");
 
         Label titleLbl = new Label("Equipment Specifications");
         titleLbl.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #e8e8f0;");
@@ -812,6 +826,7 @@ public class AdminDashboard {
         GridPane grid = new GridPane();
         grid.setHgap(20);
         grid.setVgap(16);
+        grid.getStyleClass().add("form-grid");
 
         int row = 0;
         addDetailRow(grid, row++, "Asset ID", String.valueOf(eq.getEquipmentId()));
@@ -958,22 +973,38 @@ public class AdminDashboard {
         dialog.initOwner(mainApp.getPrimaryStage());
 
         DialogPane dialogPane = dialog.getDialogPane();
+        // Apply theme-aware dialog class so styles.css can style the dialog card
+        dialogPane.getStyleClass().add("form-dialog");
         dialogPane.setStyle(
             "-fx-background-color: #1a1a2e; -fx-border-color: #2a2a45; -fx-border-radius: 12; -fx-background-radius: 12;"
         );
 
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        Button maintOk = (Button) dialogPane.lookupButton(ButtonType.OK);
+        if (maintOk != null) {
+            maintOk.getStyleClass().addAll("button", "btn-primary");
+            maintOk.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold;");
+        }
+        // Ensure OK buttons use primary (violet) style consistently
+        Button addEqOk = (Button) dialogPane.lookupButton(ButtonType.OK);
+        if (addEqOk != null) {
+            addEqOk.getStyleClass().addAll("button", "btn-primary");
+            addEqOk.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold;");
+        }
 
         GridPane grid = new GridPane();
         grid.setHgap(16);
         grid.setVgap(14);
         grid.setPadding(new Insets(24));
+        grid.getStyleClass().add("form-grid");
 
         TextField nameField = new TextField();
         nameField.setPromptText("Equipment Name");
+        nameField.getStyleClass().add("form-input");
 
         TextField serialField = new TextField();
         serialField.setPromptText("Serial Number");
+        serialField.getStyleClass().add("form-input");
 
         ComboBox<String> categoryBox = new ComboBox<>();
         List<String> catNames = categoryDAO.getAllCategories().stream()
@@ -985,21 +1016,27 @@ public class AdminDashboard {
         categoryBox.setItems(FXCollections.observableArrayList(catNames));
         categoryBox.setEditable(true);
         categoryBox.setPromptText("Select or Type Category");
+        categoryBox.getStyleClass().add("form-select");
         TextField specsField = new TextField();
         specsField.setPromptText("Technical Specifications");
+        specsField.getStyleClass().add("form-input");
 
         TextField locationField = new TextField();
         locationField.setPromptText("Storage Location");
+        locationField.getStyleClass().add("form-input");
 
         TextField costField = new TextField();
         costField.setPromptText("Purchase Cost");
+        costField.getStyleClass().add("form-input");
 
         DatePicker datePicker = new DatePicker();
         datePicker.setValue(java.time.LocalDate.now());
         datePicker.setMaxWidth(Double.MAX_VALUE);
+        datePicker.getStyleClass().add("form-input");
 
         TextField assignedToField = new TextField();
         assignedToField.setPromptText("Assigned To (Optional)");
+        assignedToField.getStyleClass().add("form-input");
 
         Label lbl0 = new Label("Name");            lbl0.getStyleClass().add("form-label");
         Label lbl1 = new Label("Serial Number");  lbl1.getStyleClass().add("form-label");
@@ -1080,16 +1117,30 @@ public class AdminDashboard {
         dialog.initOwner(mainApp.getPrimaryStage());
 
         DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.getStyleClass().add("form-dialog");
         dialogPane.setStyle(
             "-fx-background-color: #1a1a2e; -fx-border-color: #2a2a45; -fx-border-radius: 12; -fx-background-radius: 12;"
         );
 
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        // Make Change Password OK button primary
+        Button cpOk = (Button) dialogPane.lookupButton(ButtonType.OK);
+        if (cpOk != null) {
+            cpOk.getStyleClass().addAll("button", "btn-primary");
+            cpOk.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold;");
+        }
+        // Make dialog OK use primary (violet)
+        Button editOk = (Button) dialogPane.lookupButton(ButtonType.OK);
+        if (editOk != null) {
+            editOk.getStyleClass().addAll("button", "btn-primary");
+            editOk.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold;");
+        }
 
         GridPane grid = new GridPane();
         grid.setHgap(16);
         grid.setVgap(14);
         grid.setPadding(new Insets(24));
+        grid.getStyleClass().add("form-grid");
 
         TextField nameField = new TextField();
         nameField.setPromptText("Equipment Name");
@@ -1241,7 +1292,8 @@ public class AdminDashboard {
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Button addBtn = new Button("Add");
-        addBtn.getStyleClass().addAll("button", "btn-success");
+        // Use violet primary for booking add button as requested
+        addBtn.getStyleClass().addAll("button", "btn-primary");
         addBtn.setId("add-booking");
         addBtn.setOnAction(e -> showAddBookingDialog());
 
@@ -1413,16 +1465,24 @@ public class AdminDashboard {
         dialog.initOwner(mainApp.getPrimaryStage());
 
         DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.getStyleClass().add("form-dialog");
         dialogPane.setStyle(
             "-fx-background-color: #1a1a2e; -fx-border-color: #2a2a45; -fx-border-radius: 12; -fx-background-radius: 12;"
         );
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        // Make User Settings OK button primary
+        Button usOk = (Button) dialogPane.lookupButton(ButtonType.OK);
+        if (usOk != null) {
+            usOk.getStyleClass().addAll("button", "btn-primary");
+            usOk.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold;");
+        }
 
-        // Style dialog buttons
+        // Style dialog buttons: make OK use primary (violet) style
         Button okBtn = (Button) dialogPane.lookupButton(ButtonType.OK);
         if (okBtn != null) {
-            okBtn.getStyleClass().addAll("button", "btn-success");
-            okBtn.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold; -fx-background-color: -success; -fx-text-fill: #0a0a14;");
+            okBtn.getStyleClass().addAll("button", "btn-primary");
+            // keep padding and cursor via inline style, let CSS provide color
+            okBtn.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold;");
         }
         Button cancelBtn = (Button) dialogPane.lookupButton(ButtonType.CANCEL);
         if (cancelBtn != null) {
@@ -1434,6 +1494,7 @@ public class AdminDashboard {
         grid.setHgap(16);
         grid.setVgap(14);
         grid.setPadding(new Insets(24));
+        grid.getStyleClass().add("form-grid");
 
         Label title = new Label("Record Equipment Return");
         title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -text-primary;");
@@ -1485,11 +1546,11 @@ public class AdminDashboard {
         );
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
-        // Style buttons
+        // Style buttons: OK should be primary (violet) to match app theme
         Button okBtn = (Button) dialogPane.lookupButton(ButtonType.OK);
         if (okBtn != null) {
-            okBtn.getStyleClass().addAll("button", "btn-success");
-            okBtn.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold; -fx-background-color: -success; -fx-text-fill: #0a0a14;");
+            okBtn.getStyleClass().addAll("button", "btn-primary");
+            okBtn.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold;");
         }
         Button cancelBtn = (Button) dialogPane.lookupButton(ButtonType.CANCEL);
         if (cancelBtn != null) {
@@ -1505,11 +1566,13 @@ public class AdminDashboard {
         TextField borrowerField = new TextField();
         borrowerField.setPromptText("Enter Borrower Username...");
         borrowerField.setMaxWidth(Double.MAX_VALUE);
+        borrowerField.getStyleClass().add("form-input");
 
         ComboBox<Equipment> equipmentBox = new ComboBox<>();
         equipmentBox.setEditable(true);
         equipmentBox.setPromptText("Type to search available equipment...");
         equipmentBox.setMaxWidth(Double.MAX_VALUE);
+        equipmentBox.getStyleClass().add("form-select");
 
         UserDAO userDAO = new UserDAO();
         List<Equipment> availableEquip = equipmentDAO.getAllEquipment();
@@ -1586,19 +1649,23 @@ public class AdminDashboard {
         DatePicker startDate = new DatePicker();
         startDate.setValue(java.time.LocalDate.now());
         startDate.setMaxWidth(Double.MAX_VALUE);
+        startDate.getStyleClass().add("form-input");
 
         DatePicker returnDate = new DatePicker();
         returnDate.setValue(java.time.LocalDate.now().plusDays(7));
         returnDate.setMaxWidth(Double.MAX_VALUE);
+        returnDate.getStyleClass().add("form-input");
 
         TextArea purposeField = new TextArea();
         purposeField.setPromptText("Describe the booking purpose...");
         purposeField.setPrefRowCount(3);
+        purposeField.getStyleClass().add("form-textarea");
 
         ComboBox<String> typeBox = new ComboBox<>();
         typeBox.getItems().addAll("Borrow", "Reserve");
         typeBox.setValue("Borrow");
         typeBox.setMaxWidth(Double.MAX_VALUE);
+        typeBox.getStyleClass().add("form-select");
 
         Label costLabel = new Label("Cost (₱)");
         costLabel.getStyleClass().add("form-label");
@@ -1607,6 +1674,7 @@ public class AdminDashboard {
 
         TextField costField = new TextField();
         costField.setPromptText("Enter amount in PHP");
+        costField.getStyleClass().add("form-input");
         costField.setVisible(false);
         costField.setManaged(false);
 
@@ -1794,7 +1862,8 @@ public class AdminDashboard {
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Button addBtn = new Button("+ Log Maintenance");
-        addBtn.getStyleClass().addAll("button", "btn-warning");
+        // Use violet primary for maintenance add button as requested
+        addBtn.getStyleClass().addAll("button", "btn-primary");
         addBtn.setId("add-maintenance");
 
         Button refreshBtn = new Button("\u21BB Refresh");
@@ -1940,6 +2009,7 @@ public class AdminDashboard {
         equipmentBox.setEditable(true);
         equipmentBox.setPromptText("Type to search equipment...");
         equipmentBox.setMaxWidth(Double.MAX_VALUE);
+        equipmentBox.getStyleClass().add("form-select");
         
         List<Equipment> allEquip = equipmentDAO.getAllEquipment();
         ObservableList<Equipment> originalList = FXCollections.observableArrayList(allEquip);
@@ -2009,15 +2079,19 @@ public class AdminDashboard {
         TextArea defectField = new TextArea();
         defectField.setPromptText("Describe the defect...");
         defectField.setPrefRowCount(3);
+        defectField.getStyleClass().add("form-textarea");
 
         TextField costField = new TextField();
         costField.setPromptText("Parts Cost");
+        costField.getStyleClass().add("form-input");
 
         TextField techField = new TextField();
         techField.setPromptText("Technician Name/Details");
+        techField.getStyleClass().add("form-input");
 
         TextField dateField = new TextField();
         dateField.setPromptText("YYYY-MM-DD");
+        dateField.getStyleClass().add("form-input");
 
         Label l1 = new Label("Equipment Name"); l1.getStyleClass().add("form-label");
         Label l2 = new Label("Defect");       l2.getStyleClass().add("form-label");
@@ -2113,7 +2187,7 @@ public class AdminDashboard {
         toolbar.getChildren().addAll(subtitle, spacer, exportBtn, refreshBtn);
 
         // ── Sub-header tab bar (Inventory | Booking) ──
-        HBox tabBar = new HBox(0);
+        HBox tabBar = new HBox(8);
         tabBar.getStyleClass().add("log-tab-bar");
         tabBar.setAlignment(Pos.CENTER_LEFT);
 
@@ -2311,6 +2385,7 @@ public class AdminDashboard {
         // ── Dialog Content ──
         VBox content = new VBox(20);
         content.setPadding(new Insets(28, 32, 12, 32));
+        content.getStyleClass().add("modal-card");
 
         Label titleLbl = new Label("Select Data to Export");
         titleLbl.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #e8e8f0;");
@@ -2332,11 +2407,12 @@ public class AdminDashboard {
         content.getChildren().addAll(titleLbl, descLbl, optionsBox);
         dialogPane.setContent(content);
 
-        // Style OK button
-        dialogPane.lookupButton(ButtonType.OK).setStyle(
-            "-fx-background-color: linear-gradient(to right,#4361ee,#3a86ff); -fx-text-fill: white; "
-            + "-fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 10 28;"
-        );
+        // Style OK button: use primary (violet) class instead of inline blue gradient
+        Button dlgOk = (Button) dialogPane.lookupButton(ButtonType.OK);
+        if (dlgOk != null) {
+            dlgOk.getStyleClass().addAll("button", "btn-primary");
+            dlgOk.setStyle("-fx-padding: 10 28; -fx-font-weight: bold;");
+        }
 
         dialog.setResultConverter(btn -> {
             if (btn == ButtonType.OK) {
@@ -2368,39 +2444,29 @@ public class AdminDashboard {
 
         VBox textBox = new VBox(2);
         Label titleLbl = new Label(icon + "  " + label);
-        titleLbl.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #e8e8f0;");
+        // use theme tokens so colors match current theme
+        titleLbl.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: -text-primary;");
         Label descLbl = new Label(desc);
-        descLbl.setStyle("-fx-font-size: 12px; -fx-text-fill: #8888a8;");
+        descLbl.setStyle("-fx-font-size: 12px; -fx-text-fill: -text-secondary;");
         textBox.getChildren().addAll(titleLbl, descLbl);
 
-        HBox card = new HBox(14, rb, textBox);
-        card.setAlignment(Pos.CENTER_LEFT);
-        card.setStyle(
-            "-fx-background-color: #12121f; -fx-border-color: #2a2a45; -fx-border-radius: 10; "
-            + "-fx-background-radius: 10; -fx-padding: 14 18;"
-        );
-        card.setOnMouseClicked(e -> rb.setSelected(true));
-        card.setCursor(javafx.scene.Cursor.HAND);
-
-        // Wrap the HBox into the RadioButton graphic so it renders as a card row
-        // We return a proxy RadioButton that holds user data; the card is displayed separately.
-        // Use a container trick: wrap card itself as graphic-less toggle handled by ToggleGroup.
+        // Use the RadioButton's graphic to render a full-width card row.
         rb.setGraphic(textBox);
-        rb.setStyle("-fx-text-fill: transparent; -fx-padding: 14 18; "
-            + "-fx-background-color: #12121f; -fx-background-radius: 10; -fx-border-color: #2a2a45; "
-            + "-fx-border-radius: 10; -fx-font-size: 0;");
-        rb.setMaxWidth(Double.MAX_VALUE);
+        rb.getStyleClass().add("export-option");
+        rb.setCursor(javafx.scene.Cursor.HAND);
+        rb.setOnMouseClicked(e -> rb.setSelected(true));
+
+        // Toggle a selected CSS class on the RadioButton so the stylesheet can update the
+        // visual card state (keeps styling centralized in CSS rather than inline styles).
         rb.selectedProperty().addListener((obs, oldVal, selected) -> {
             if (selected) {
-                rb.setStyle("-fx-text-fill: transparent; -fx-padding: 14 18; "
-                    + "-fx-background-color: rgba(67,97,238,0.12); -fx-background-radius: 10; "
-                    + "-fx-border-color: #4361ee; -fx-border-radius: 10; -fx-font-size: 0;");
+                if (!rb.getStyleClass().contains("export-option-selected"))
+                    rb.getStyleClass().add("export-option-selected");
             } else {
-                rb.setStyle("-fx-text-fill: transparent; -fx-padding: 14 18; "
-                    + "-fx-background-color: #12121f; -fx-background-radius: 10; "
-                    + "-fx-border-color: #2a2a45; -fx-border-radius: 10; -fx-font-size: 0;");
+                rb.getStyleClass().remove("export-option-selected");
             }
         });
+
         return rb;
     }
 

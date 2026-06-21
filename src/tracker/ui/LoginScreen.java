@@ -44,15 +44,17 @@ public class LoginScreen {
         // ══════════════════════════════════════════════════════════════
         HBox splitCard = new HBox();
         splitCard.getStyleClass().add("login-split-card");
-        splitCard.setPrefWidth(900);
-        splitCard.setMaxWidth(900);
-        splitCard.setMinWidth(900);
+        // Increase overall card width so the left branding panel has more room
+        splitCard.setPrefWidth(980);
+        splitCard.setMaxWidth(980);
+        splitCard.setMinWidth(980);
         splitCard.setPrefHeight(560);
         splitCard.setMaxHeight(560);
         splitCard.setMinHeight(560);
 
         // Clip the card to rounded corners
-        Rectangle clip = new Rectangle(900, 560);
+        // Match the clip size to the new card width
+        Rectangle clip = new Rectangle(980, 560);
         clip.setArcWidth(40);
         clip.setArcHeight(40);
         splitCard.setClip(clip);
@@ -64,9 +66,10 @@ public class LoginScreen {
         leftPane.getStyleClass().add("login-left-panel");
         leftPane.setPadding(new Insets(48, 44, 44, 44));
         leftPane.setAlignment(Pos.TOP_LEFT);
-        leftPane.setPrefWidth(450);
-        leftPane.setMinWidth(450);
-        leftPane.setMaxWidth(450);
+        // Give the left branding panel more horizontal space so feature descriptions fit
+        leftPane.setPrefWidth(520);
+        leftPane.setMinWidth(520);
+        leftPane.setMaxWidth(520);
 
         // ── Logo block ──
         HBox logoRow = new HBox(12);
@@ -88,9 +91,12 @@ public class LoginScreen {
         logoRow.getChildren().addAll(logoIcon, logoText);
 
         // ── Headline ──
-        Label headline = new Label("Track Your\nHardware Smarter,\nNot Harder.");
+        Label headline = new Label("Track Your\nHardware Smarter");
         headline.getStyleClass().add("login-headline");
+        // Allow the headline to wrap instead of being clipped and expand vertically
         headline.setWrapText(true);
+        headline.setMaxWidth(440);
+        headline.setMinHeight(Region.USE_PREF_SIZE);
         VBox.setMargin(headline, new Insets(24, 0, 24, 0));
 
         // ── Feature list ──
@@ -121,6 +127,7 @@ public class LoginScreen {
         rightPane.getStyleClass().add("login-right-panel");
         rightPane.setPadding(new Insets(48, 48, 48, 48));
         rightPane.setAlignment(Pos.CENTER_LEFT);
+        // Keep the right pane at 450 so the overall card aligns with the new width
         rightPane.setPrefWidth(450);
         rightPane.setMinWidth(450);
         rightPane.setMaxWidth(450);
@@ -173,7 +180,7 @@ public class LoginScreen {
         VBox.setMargin(errorLabel, new Insets(0, 0, 12, 0));
 
         // Sign in button
-        Button loginBtn = new Button("Sign In to Secure Terminal");
+        Button loginBtn = new Button("Sign In");
         loginBtn.getStyleClass().add("login-btn");
         loginBtn.setMaxWidth(Double.MAX_VALUE);
 
@@ -264,8 +271,14 @@ public class LoginScreen {
         t.getStyleClass().add("login-feature-title");
         Label d = new Label(desc);
         d.getStyleClass().add("login-feature-desc");
+        // Ensure descriptions wrap and have sufficient width to avoid truncation
         d.setWrapText(true);
-        d.setMaxWidth(260);
+        d.setMaxWidth(320);
+        d.setPrefWidth(320);
+        // Let the label expand vertically to fit its content
+        d.setMinHeight(Region.USE_PREF_SIZE);
+        // Allow the text column to grow in the HBox so wrapping behaves correctly
+        HBox.setHgrow(text, Priority.ALWAYS);
         text.getChildren().addAll(t, d);
 
         HBox row = new HBox(12, iconBox, text);

@@ -360,7 +360,7 @@ public class BorrowerPortal {
 
         // Form card
         VBox formCard = new VBox(20);
-        formCard.getStyleClass().add("card");
+        formCard.getStyleClass().addAll("card", "modal-card");
 
         Label formTitle = new Label("New Booking Request");
         formTitle.getStyleClass().add("card-header");
@@ -375,6 +375,7 @@ public class BorrowerPortal {
         typeBox.getItems().addAll("Borrow", "Reserve");
         typeBox.setValue("Borrow");
         typeBox.setMaxWidth(Double.MAX_VALUE);
+        typeBox.getStyleClass().add("form-select");
 
         // Cost
         Label costLabel = new Label("COST (₱)");
@@ -386,6 +387,7 @@ public class BorrowerPortal {
         costField.setPromptText("Enter amount in PHP");
         costField.setVisible(false);
         costField.setManaged(false);
+        costField.getStyleClass().add("form-input");
 
         typeBox.valueProperty().addListener((obs, oldVal, newVal) -> {
             boolean isReserve = "Reserve".equals(newVal);
@@ -403,6 +405,7 @@ public class BorrowerPortal {
         equipmentBox.setEditable(true);
         equipmentBox.setPromptText("Type to search available equipment...");
         equipmentBox.setMaxWidth(Double.MAX_VALUE);
+        equipmentBox.getStyleClass().add("form-select");
 
         List<Equipment> availableEquipment = equipmentDAO.getAllEquipment();
         availableEquipment.removeIf(eq -> !"AVAILABLE".equals(eq.getEquipmentStatus()));
@@ -483,6 +486,7 @@ public class BorrowerPortal {
         startDate.setPromptText("Select start date");
         startDate.setMaxWidth(Double.MAX_VALUE);
         startDate.setValue(LocalDate.now());
+        startDate.getStyleClass().add("form-input");
         
         Spinner<Integer> startHourSpinner = new Spinner<>(0, 23, java.time.LocalTime.now().getHour());
         startHourSpinner.setEditable(true);
@@ -508,6 +512,7 @@ public class BorrowerPortal {
         returnDate.setPromptText("Select return date");
         returnDate.setMaxWidth(Double.MAX_VALUE);
         returnDate.setValue(LocalDate.now().plusDays(7));
+        returnDate.getStyleClass().add("form-input");
 
         // Purpose
         Label purposeLabel = new Label("PURPOSE / REASON");
@@ -517,6 +522,7 @@ public class BorrowerPortal {
         purposeArea.setPromptText("Describe why you need this equipment...");
         purposeArea.setPrefRowCount(4);
         purposeArea.setMaxWidth(Double.MAX_VALUE);
+        purposeArea.getStyleClass().add("form-textarea");
 
         // Feedback label
         Label feedbackLabel = new Label();
@@ -629,6 +635,11 @@ public class BorrowerPortal {
         DialogPane dialogPane = dialog.getDialogPane();
         dialogPane.setStyle("-fx-background-color: -bg-card; -fx-border-color: -border; -fx-border-radius: 12; -fx-background-radius: 12;");
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        Button cpOk = (Button) dialogPane.lookupButton(ButtonType.OK);
+        if (cpOk != null) {
+            cpOk.getStyleClass().addAll("button", "btn-primary");
+            cpOk.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold;");
+        }
 
         GridPane grid = new GridPane();
         grid.setHgap(16);
@@ -690,6 +701,11 @@ public class BorrowerPortal {
         DialogPane dialogPane = dialog.getDialogPane();
         dialogPane.setStyle("-fx-background-color: -bg-card; -fx-border-color: -border; -fx-border-radius: 12; -fx-background-radius: 12;");
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        Button usOk = (Button) dialogPane.lookupButton(ButtonType.OK);
+        if (usOk != null) {
+            usOk.getStyleClass().addAll("button", "btn-primary");
+            usOk.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold;");
+        }
 
         GridPane grid = new GridPane();
         grid.setHgap(16);

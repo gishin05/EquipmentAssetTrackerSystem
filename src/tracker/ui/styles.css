@@ -102,6 +102,35 @@
     -fx-text-fill: #ffffff;
 }
 
+/* Icon + text layout inside sidebar nav buttons */
+.nav-icon {
+    -fx-font-size: 14px;
+    -fx-text-fill: #9d9bb8;
+    -fx-padding: 0 6 0 0;
+}
+.nav-text {
+    -fx-font-family: "Poppins", sans-serif;
+    -fx-font-weight: 600;
+    -fx-font-size: 15px;
+    -fx-text-fill: #9d9bb8;
+}
+
+/* When the nav button is active/hovered/pressed, make icon + text white */
+.header-nav-btn-active .nav-text,
+.header-nav-btn:armed .nav-text,
+.header-nav-btn:pressed .nav-text,
+.button.header-nav-btn:hover .nav-text,
+.header-nav-btn:hover .nav-text {
+    -fx-text-fill: #ffffff;
+}
+.header-nav-btn-active .nav-icon,
+.header-nav-btn:armed .nav-icon,
+.header-nav-btn:pressed .nav-icon,
+.button.header-nav-btn:hover .nav-icon,
+.header-nav-btn:hover .nav-icon {
+    -fx-text-fill: #ffffff;
+}
+
 .header-nav-btn-active,
 .header-nav-btn:pressed,
 .header-nav-btn:armed {
@@ -127,9 +156,10 @@
     -fx-background-color: #ffffff;
     -fx-background-radius: 20;
     -fx-border-radius: 20;
-    -fx-min-width: 900;
-    -fx-max-width: 900;
-    -fx-pref-width: 900;
+    /* Increase split card width to accommodate wider left branding column */
+    -fx-min-width: 980;
+    -fx-max-width: 980;
+    -fx-pref-width: 980;
     -fx-min-height: 560;
     -fx-max-height: 560;
     -fx-pref-height: 560;
@@ -143,6 +173,11 @@
 .login-logo-icon {
     -fx-background-color: rgba(255, 255, 255, 0.2);
     -fx-background-radius: 10;
+}
+
+/* Ensure any label/emoji inside the logo icon is white */
+.login-logo-icon .label {
+    -fx-text-fill: #ffffff;
 }
 
 .login-logo-name {
@@ -161,14 +196,30 @@
 .login-headline {
     -fx-font-family: "Poppins", sans-serif;
     -fx-font-weight: 700;
-    -fx-font-size: 34px;
+    /* Slightly reduced so the headline wraps cleanly on smaller displays */
+    -fx-font-size: 30px;
     -fx-text-fill: #ffffff;
-    -fx-line-spacing: -2px;
+    -fx-line-spacing: 0px;
+    /* Max width should match available space inside the left panel (left width - padding) */
+    -fx-max-width: 440px;
 }
 
 .login-feature-icon {
     -fx-background-color: rgba(255, 255, 255, 0.15);
     -fx-background-radius: 8;
+}
+
+/* Make the small feature icons (emoji or glyphs) white for contrast */
+.login-feature-icon .label {
+    -fx-text-fill: #ffffff;
+}
+
+/* Ensure the description label can be sized via css fallback as well */
+.login-feature-desc {
+    -fx-font-family: "Poppins", sans-serif;
+    -fx-font-size: 12px;
+    -fx-text-fill: rgba(255, 255, 255, 0.55);
+    -fx-max-width: 320px;
 }
 
 .login-feature-title {
@@ -182,6 +233,8 @@
     -fx-font-family: "Poppins", sans-serif;
     -fx-font-size: 12px;
     -fx-text-fill: rgba(255, 255, 255, 0.55);
+    /* Ensure the description is allowed to wrap by providing a CSS width cap */
+    -fx-max-width: 320px;
 }
 
 .login-copyright {
@@ -297,7 +350,8 @@
     -fx-font-family: "Poppins", sans-serif;
     -fx-font-weight: 600;
     -fx-font-size: 14px;
-    -fx-background-color: #5b47e0;
+    /* Default purple as requested */
+    -fx-background-color: -accent;
     -fx-text-fill: #ffffff;
     -fx-border-color: transparent;
     -fx-background-radius: 10;
@@ -309,13 +363,34 @@
 }
 
 .login-btn:hover {
-    -fx-background-color: #4a38c9;
+    -fx-background-color: -accent-soft;
 }
 
 .login-btn:pressed {
-    -fx-background-color: #3b2bbc;
+    -fx-background-color: linear-gradient(to right, #4361ee, #3a86ff);
     -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
+}
+
+/* Side panel user utility buttons - flat look (no border) */
+.button.side-panel-btn,
+.button.side-panel-btn-logout {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: 600;
+    -fx-padding: 8 12 8 12;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+}
+.button.side-panel-btn:hover,
+.button.side-panel-btn-logout:hover {
+    -fx-background-color: #231f35;
+}
+
+/* If you want the logout button to emphasise danger only on hover, you can override text color */
+.button.side-panel-btn-logout {
+    -fx-text-fill: #ffffff;
 }
 
 .login-default-hint {
@@ -508,6 +583,20 @@
     -fx-text-fill: -text-primary;
 }
 
+/* Ensure sidebar navigation buttons use the same hover background as
+   the settings / logout side-panel buttons. Use broader selectors and
+   !important to guarantee the style wins even if the button also has
+   the generic 'button' class or is not nested directly under .sidebar. */
+.button.header-nav-btn:hover,
+.button.header-nav-btn:armed,
+.button.header-nav-btn:pressed,
+.header-nav-btn:hover,
+.header-nav-btn:armed,
+.header-nav-btn:pressed {
+    -fx-background-color: #231f35 !important;
+    -fx-text-fill: #ffffff !important;
+}
+
 .button:pressed,
 .button:arm,
 .btn-active,
@@ -515,6 +604,320 @@
     -fx-background-color: -accent !important;
     -fx-text-fill: #ffffff !important;
     -fx-border-color: transparent !important;
+}
+
+/* Ensure .btn-primary takes precedence over the generic .button rules
+   by using a more specific selector. This makes buttons with both
+   'button' and 'btn-primary' classes display violet by default. */
+.button.btn-primary {
+    -fx-background-color: -accent;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: transparent;
+    -fx-font-size: 13.5px;
+    -fx-padding: 12 24 12 24;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+}
+.button.btn-primary:hover {
+    -fx-background-color: -accent-soft;
+}
+.button.btn-primary:pressed {
+    -fx-background-color: linear-gradient(to right, #4361ee, #3a86ff);
+}
+
+/* Ensure the login button (which also has the default 'button' class) shows the
+   violet accent color by default. Using the more specific selector '.button.login-btn'
+   guarantees it takes precedence over the generic '.button' rule. */
+.button.login-btn {
+    -fx-background-color: -accent;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: transparent;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 13 0 13 0;
+}
+.button.login-btn:hover {
+    -fx-background-color: -accent-soft;
+}
+.button.login-btn:pressed {
+    -fx-background-color: linear-gradient(to right, #4361ee, #3a86ff);
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   8. FORMS & MODALS — Unified form styles for Add / Booking / Maintenance / Export
+   These styles are intended for modal/dialog panes used by the actions:
+   "New booking", "Add equipment", "Add", "Log maintenance" and "Export".
+   They follow the app's existing theme variables so dialogs look coherent.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* Container wrapper applied to dialog root nodes (optional utility) */
+.modal-form {
+    -fx-background-color: transparent;
+}
+
+/* The dialog card itself */
+.form-dialog,
+.modal-card {
+    -fx-background-color: -bg-primary;
+    -fx-border-color: -border-medium;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 14;
+    -fx-background-radius: 14;
+    -fx-padding: 20 20 18 20;
+    -fx-effect: dropshadow(gaussian, rgba(26,24,37,0.08), 22, 0.18, 0, 10);
+    -fx-min-width: 640;
+    -fx-max-width: 980;
+}
+
+/* Compact variant for smaller dialogs */
+.form-dialog.small {
+    -fx-min-width: 420;
+    -fx-max-width: 520;
+}
+
+.modal-header {
+    -fx-padding: 0 0 12 0;
+    -fx-alignment: center-left;
+}
+
+.modal-title {
+    -fx-font-family: "Poppins", sans-serif;
+    -fx-font-size: 18px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -text-primary;
+}
+
+.modal-subtitle {
+    -fx-font-family: "Poppins", sans-serif;
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-secondary;
+    -fx-padding: 6 0 0 0;
+}
+
+/* Generic form layout helpers. In code these can be applied to HBox/VBox/GridPane nodes */
+.form-grid {
+    -fx-padding: 6 0 0 0;
+    -fx-hgap: 12; /* for GridPane */
+    -fx-vgap: 12; /* for GridPane */
+}
+
+.form-row {
+    -fx-spacing: 12; /* for HBox/VBox */
+    -fx-alignment: center-left;
+}
+
+.form-label {
+    -fx-font-family: "Poppins", sans-serif;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -text-secondary;
+    -fx-padding: 4 0 4 0;
+}
+
+/* Reuse core control classes but provide a named helper so Java code can attach 'form-input' */
+.form-input,
+.form-select,
+.form-textarea {
+    -fx-font-family: "Poppins", sans-serif;
+    -fx-font-size: 13.5px;
+    -fx-background-color: -bg-input;
+    -fx-text-fill: -text-primary;
+    -fx-prompt-text-fill: -text-muted;
+    -fx-border-color: -border-medium;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 10 12 10 12;
+    -fx-border-width: 1.5;
+}
+
+.form-input:focused,
+.form-select:focused,
+.form-textarea:focused {
+    -fx-border-color: -border-focus;
+    -fx-effect: dropshadow(gaussian, rgba(91, 71, 224, 0.10), 8, 0.2, 0, 0);
+}
+
+.form-textarea {
+    -fx-min-height: 96;
+    -fx-wrap-text: true;
+}
+
+/* Remove outer container border for ComboBox controls to avoid a double-border
+   appearance when using .form-select with the native combo box. This makes
+   combo boxes visually consistent with other form controls. */
+.combo-box,
+.combo-box-base,
+.combo-box .text-field {
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-background-color: -bg-input; /* ensure input background matches other inputs */
+}
+
+.form-select.combo-box,
+.form-select > .combo-box {
+    -fx-border-color: transparent;
+}
+
+.file-input {
+    -fx-background-color: -bg-input;
+    -fx-border-color: -border-medium;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8 10;
+}
+
+.form-help {
+    -fx-font-family: "Poppins", sans-serif;
+    -fx-font-size: 11px;
+    -fx-text-fill: -text-muted;
+}
+
+.form-error {
+    -fx-font-family: "Poppins", sans-serif;
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-danger;
+    -fx-font-weight: 700;
+}
+
+.form-actions {
+    -fx-padding: 16 0 0 0;
+    -fx-alignment: center-right;
+    -fx-spacing: 10; /* for HBox */
+}
+
+.btn-cancel {
+    -fx-background-color: transparent;
+    -fx-border-color: -border-strong;
+    -fx-border-width: 1.2;
+    -fx-text-fill: -text-secondary;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 10 16 10 16;
+}
+
+.btn-submit {
+    -fx-background-color: -accent;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: transparent;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 10 18 10 18;
+    -fx-font-weight: 700;
+}
+.btn-submit:hover {
+    -fx-background-color: -accent-soft;
+}
+
+.btn-export {
+    /* Use a lighter, pastel export button by default so it reads as a non-dark
+       selectable control. Hover/press will show the richer primary gradient. */
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #f3effc, #efeafc);
+    -fx-text-fill: -text-primary;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 10 18 10 18;
+    -fx-font-weight: 700;
+}
+
+.btn-export:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #6a56f6, #4a38c9);
+    -fx-text-fill: #ffffff;
+}
+
+.btn-export:pressed {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #4a38c9, #3b2bbc);
+    -fx-text-fill: #ffffff;
+}
+
+.form-inline-actions {
+    -fx-alignment: center-left;
+    -fx-spacing: 8;
+}
+
+/* Log sub-header tab bar (Inventory / Booking) */
+.log-tab-bar {
+    -fx-padding: 8 12 8 12;
+}
+
+.log-tab-btn {
+    -fx-font-family: "Poppins", sans-serif;
+    -fx-font-weight: 700;
+    -fx-font-size: 13px;
+    -fx-text-fill: -text-secondary;
+    -fx-background-color: transparent;
+    -fx-border-color: -border-medium;
+    -fx-border-width: 1.2;
+    -fx-padding: 8 12;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-cursor: hand;
+}
+
+.log-tab-btn:hover {
+    -fx-background-color: -bg-hover;
+    -fx-text-fill: -text-primary;
+}
+
+/* Active state persists while on that log tab */
+.log-tab-btn-active {
+    -fx-background-color: -accent !important;
+    -fx-text-fill: #ffffff !important;
+    -fx-border-color: -accent !important;
+}
+
+/* Keep sidebar nav active color when hovered (do not revert to hover color) */
+.header-nav-btn-active:hover {
+    -fx-background-color: #5b47e0 !important;
+    -fx-text-fill: #ffffff !important;
+}
+
+/* Export dialog option rows (RadioButton used as a full-width card) */
+.export-option {
+    -fx-background-color: -bg-input;
+    -fx-border-color: -border-medium;
+    -fx-border-width: 1.2;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 12 14;
+    -fx-font-size: 0; /* hide default radio glyph spacing */
+    -fx-alignment: center-left;
+}
+
+.export-option .label {
+    -fx-font-size: 12px;
+}
+
+.export-option:hover {
+    -fx-background-color: -bg-hover;
+}
+
+.export-option.export-option-selected {
+    -fx-background-color: rgba(91,71,224,0.06);
+    -fx-border-color: -accent;
+}
+
+/* Small helper to make labels + values look neat in compact lists (export preview) */
+.kv-row {
+    -fx-alignment: center-left;
+    -fx-spacing: 14;
+    -fx-padding: 6 0 6 0;
+}
+
+/* Provide a subtle divider for modal sections */
+.form-divider {
+    -fx-min-height: 1;
+    -fx-background-color: -border-medium;
+    -fx-background-radius: 2;
+    -fx-padding: 8 0 8 0;
+    -fx-opacity: 0.6;
+}
+
+/* Ensure accessible focus visuals for form controls inside dialogs */
+.form-input:focused, .form-select:focused, .form-textarea:focused {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
