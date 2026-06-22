@@ -11,6 +11,12 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.chart.*;
+import javafx.animation.*;
+import javafx.util.Duration;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import java.io.File;
+import java.io.InputStream;
 import javafx.stage.FileChooser;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -164,24 +170,35 @@ public class AdminDashboard {
         brandingBlock.setPadding(new Insets(24, 20, 20, 20));
         brandingBlock.setStyle("-fx-border-color: #2a2740; -fx-border-width: 0 0 1 0;");
      
-        Label appTitle = new Label("Obsidian Pro");
-        appTitle.setStyle(
-            "-fx-font-family: 'Poppins';" +
-            "-fx-font-size: 18px;" +
-            "-fx-font-weight: 900;" +
-            "-fx-text-fill: #ffffff;"
-        );
-     
-        Label appSubtitle = new Label("EQUIPMENT TRACKER");
-        appSubtitle.setStyle(
-            "-fx-font-family: 'Poppins';" +
-            "-fx-font-size: 10px;" +
-            "-fx-font-weight: bold;" +
-            "-fx-text-fill: #7b94ff;" +
-            "-fx-letter-spacing: 1px;"
-        );
-     
-        brandingBlock.getChildren().addAll(appTitle, appSubtitle);
+        // Branding: show Atlas logo image and two-line textual brand to the right
+        HBox brandRow = new HBox(10);
+        brandRow.setAlignment(Pos.CENTER_LEFT);
+        Image brandImage = safeLoadImage("/tracker/Logo/Atlas_logo.png");
+        ImageView brandImg = null;
+        if (brandImage != null) {
+            brandImg = new ImageView(brandImage);
+            // Keep a compact icon for the sidebar
+            brandImg.setFitWidth(48);
+            brandImg.setFitHeight(48);
+            brandImg.setPreserveRatio(true);
+        }
+
+        // Text block: "Atlas" (bold, white) and smaller subtitle below
+        Label atlasTitle = new Label("Atlas");
+        atlasTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: 800; -fx-text-fill: #ffffff;");
+        Label atlasSub = new Label("EQUIPMENT ASSET TRACKER");
+        atlasSub.setStyle("-fx-font-size: 11px; -fx-text-fill: #ffffff; -fx-opacity: 0.95; -fx-letter-spacing: 0.4px;");
+        VBox brandText = new VBox(0, atlasTitle, atlasSub);
+        brandText.setAlignment(Pos.CENTER_LEFT);
+
+        if (brandImg != null) {
+            brandRow.getChildren().addAll(brandImg, brandText);
+        } else {
+            // If image missing, still show the textual branding inline
+            brandRow.getChildren().add(brandText);
+        }
+
+        brandingBlock.getChildren().add(brandRow);
      
         // ── NAV BUTTON CONTAINER ────────────────────────────────
      // ── NAV BUTTON CONTAINER ────────────────────────────────
@@ -318,6 +335,25 @@ public class AdminDashboard {
         StackPane.setAlignment(sidePanel, Pos.BOTTOM_LEFT);
         StackPane.setMargin(sidePanel, new Insets(0, 0, 20, 255));
         sidePanel.setVisible(false);
+    }
+
+    /** Attempts to load an image resource from the classpath or project src folder.
+     * Returns null if not found. */
+    private Image safeLoadImage(String resourcePath) {
+        try {
+            InputStream is = getClass().getResourceAsStream(resourcePath);
+            if (is != null) {
+                return new Image(is);
+            }
+            String userDir = System.getProperty("user.dir");
+            File f = new File(userDir + File.separator + "src" + File.separator + resourcePath.replaceFirst("^/", ""));
+            if (f.exists()) {
+                return new Image(f.toURI().toString());
+            }
+        } catch (Exception ex) {
+            // ignore and return null
+        }
+        return null;
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -587,6 +623,73 @@ public class AdminDashboard {
         
         chartsRow.getChildren().addAll(barCard, pieCard);
 
+        // Entrance animations: fade/slide in the stats and charts with staggered bar growth
+        try {
+            FadeTransition ftStats = new FadeTransition(Duration.millis(500), statsBar);
+            ftStats.setFromValue(0);
+            ftStats.setToValue(1);
+            ftStats.setDelay(Duration.millis(100));
+            ftStats.play();
+
+            FadeTransition ftCharts = new FadeTransition(Duration.millis(500), chartsRow);
+            ftCharts.setFromValue(0);
+            ftCharts.setToValue(1);
+            ftCharts.setDelay(Duration.millis(250));
+            ftCharts.play();
+
+            TranslateTransition ttCharts = new TranslateTransition(Duration.millis(500), chartsRow);
+            ttCharts.setFromY(12);
+            ttCharts.setToY(0);
+            ttCharts.setDelay(Duration.millis(250));
+            ttCharts.play();
+
+            // Animate each custom bar height and its count label in sequence
+            for (int i = 0; i < customBarChart.getChildren().size(); i++) {
+                javafx.scene.Node container = customBarChart.getChildren().get(i);
+                if (container instanceof VBox) {
+                    VBox bc = (VBox) container;
+                    if (bc.getChildren().size() > 1) {
+                        javafx.scene.Node barNode = bc.getChildren().get(1);
+                        if (barNode instanceof Region) {
+                            Region bar = (Region) barNode;
+                            double target = bar.getPrefHeight();
+                            // start collapsed
+                            bar.setPrefHeight(0);
+                            Timeline tl = new Timeline(new KeyFrame(Duration.millis(600), new KeyValue(bar.prefHeightProperty(), target, Interpolator.EASE_BOTH)));
+                            tl.setDelay(Duration.millis(300 + i * 80));
+                            tl.play();
+                        }
+                        // fade in the count label
+                        javafx.scene.Node countLabel = bc.getChildren().get(0);
+                        countLabel.setOpacity(0);
+                        FadeTransition fCount = new FadeTransition(Duration.millis(320), countLabel);
+                        fCount.setFromValue(0);
+                        fCount.setToValue(1);
+                        fCount.setDelay(Duration.millis(350 + i * 80));
+                        fCount.play();
+                    }
+                }
+            }
+
+            // Fade in pie chart and scale the total label
+            statusChart.setOpacity(0);
+            FadeTransition fPie = new FadeTransition(Duration.millis(600), statusChart);
+            fPie.setFromValue(0);
+            fPie.setToValue(1);
+            fPie.setDelay(Duration.millis(450));
+            fPie.play();
+
+            totalLbl.setScaleX(0.7);
+            totalLbl.setScaleY(0.7);
+            ScaleTransition st = new ScaleTransition(Duration.millis(600), totalLbl);
+            st.setToX(1);
+            st.setToY(1);
+            st.setDelay(Duration.millis(600));
+            st.play();
+        } catch (Exception ex) {
+            // If animation APIs are not available for some reason, ignore and continue
+        }
+
         // 3. Tables Row
         VBox tablesRow = new VBox(15);
         tablesRow.setAlignment(Pos.TOP_LEFT);
@@ -757,6 +860,23 @@ public class AdminDashboard {
         
         tablesRow.getChildren().add(tableContainer);
 
+        // Animate table container entrance
+        try {
+            tableContainer.setOpacity(0);
+            TranslateTransition ttTable = new TranslateTransition(Duration.millis(450), tableContainer);
+            ttTable.setFromY(8);
+            ttTable.setToY(0);
+            ttTable.setDelay(Duration.millis(520));
+            FadeTransition ftTable = new FadeTransition(Duration.millis(450), tableContainer);
+            ftTable.setFromValue(0);
+            ftTable.setToValue(1);
+            ftTable.setDelay(Duration.millis(520));
+            ftTable.play();
+            ttTable.play();
+        } catch (Exception ex) {
+            // ignore animation failures
+        }
+
         panel.getChildren().addAll(statsBar, chartsRow, tablesRow);
         contentArea.getChildren().add(panel);
         StackPane.setAlignment(panel, Pos.TOP_LEFT);
@@ -826,10 +946,12 @@ public class AdminDashboard {
         exportBtn.setOnAction(e -> showExportDialog());
 
         ComboBox<String> sortBox = new ComboBox<>();
-        sortBox.getItems().addAll("Sort: Name (A-Z)", "Sort: Name (Z-A)", "Sort: Status");
-        sortBox.setValue("Sort: Name (A-Z)");
+        // Remove the literal "Sort:" prefix per request so the options are shorter/cleaner
+        sortBox.getItems().addAll("Name (A-Z)", "Name (Z-A)", "Status");
+        sortBox.setValue("Name (A-Z)");
         sortBox.getStyleClass().add("form-select");
-        sortBox.setStyle("-fx-pref-width: 160px;");
+        // Make inventory sort combobox slightly shorter as requested
+        sortBox.setPrefWidth(180);
 
         toolbar.getChildren().addAll(searchField, sortBox, spacer, addBtn, exportBtn);
 
@@ -923,11 +1045,11 @@ public class AdminDashboard {
         ObservableList<Equipment> data = FXCollections.observableArrayList(equipmentDAO.getAllEquipment());
         
         sortBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if ("Sort: Name (A-Z)".equals(newVal)) {
+            if ("Name (A-Z)".equals(newVal)) {
                 FXCollections.sort(data, java.util.Comparator.comparing(eq -> eq.getEquipmentName() == null ? "" : eq.getEquipmentName()));
-            } else if ("Sort: Name (Z-A)".equals(newVal)) {
+            } else if ("Name (Z-A)".equals(newVal)) {
                 FXCollections.sort(data, java.util.Comparator.comparing((Equipment eq) -> eq.getEquipmentName() == null ? "" : eq.getEquipmentName()).reversed());
-            } else if ("Sort: Status".equals(newVal)) {
+            } else if ("Status".equals(newVal)) {
                 FXCollections.sort(data, java.util.Comparator.comparing(eq -> eq.getEquipmentStatus() == null ? "" : eq.getEquipmentStatus()));
             }
         });
@@ -954,6 +1076,8 @@ public class AdminDashboard {
         panel.getChildren().addAll(statsBar, toolbar, table);
         contentArea.getChildren().add(panel);
         StackPane.setAlignment(panel, Pos.TOP_LEFT);
+        // Entrance animation similar to Dashboard
+        animatePanelEntrance(panel);
     }
 
     private void showBookingDetailsDialog(Booking booking) {
@@ -1222,6 +1346,39 @@ public class AdminDashboard {
             buildStatCard("IN MAINTENANCE", String.valueOf(inMaint), "Needs attention", "maintenance", "⏱")
         );
         return statsBar;
+    }
+
+    /**
+     * Generic entrance animation for panels added to the content area.
+     * Fades and slides the panel into view and staggers a short fade for its direct children.
+     */
+    private void animatePanelEntrance(VBox panel) {
+        try {
+            panel.setOpacity(0);
+            panel.setTranslateY(8);
+            FadeTransition ft = new FadeTransition(Duration.millis(360), panel);
+            ft.setFromValue(0);
+            ft.setToValue(1);
+            TranslateTransition tt = new TranslateTransition(Duration.millis(360), panel);
+            tt.setFromY(8);
+            tt.setToY(0);
+            ft.play();
+            tt.play();
+
+            // Stagger children fade-ins for a subtle tiered effect
+            double baseDelay = 120;
+            for (int i = 0; i < panel.getChildren().size(); i++) {
+                javafx.scene.Node child = panel.getChildren().get(i);
+                child.setOpacity(0);
+                FadeTransition cft = new FadeTransition(Duration.millis(300), child);
+                cft.setFromValue(0);
+                cft.setToValue(1);
+                cft.setDelay(Duration.millis(baseDelay + i * 80));
+                cft.play();
+            }
+        } catch (Exception ex) {
+            // Ignore animation errors on restricted platforms
+        }
     }
 
     private VBox buildStatCard(String title, String value, String badgeText, String type, String iconChar) {
@@ -1587,10 +1744,11 @@ public class AdminDashboard {
         exportBtn.setOnAction(e -> showExportDialog());
 
         ComboBox<String> sortBox = new ComboBox<>();
-        sortBox.getItems().addAll("Sort: Newest First", "Sort: Oldest First", "Sort: Status");
-        sortBox.setValue("Sort: Newest First");
+        // remove the explicit "Sort:" prefix for cleaner options
+        sortBox.getItems().addAll("Newest First", "Oldest First", "Status");
+        sortBox.setValue("Newest First");
         sortBox.getStyleClass().add("form-select");
-        sortBox.setStyle("-fx-pref-width: 160px;");
+        sortBox.setPrefWidth(160);
 
         toolbar.getChildren().addAll(subtitle, sortBox, spacer, addBtn, exportBtn);
 
@@ -1746,11 +1904,11 @@ public class AdminDashboard {
         table.getColumns().addAll(colId, colEquipName, colBorrowerName, colStart, colReturnAt, colPurpose, colStatus, colActions);
         ObservableList<Booking> data = FXCollections.observableArrayList(bookingDAO.getAllBookings());
         sortBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if ("Sort: Newest First".equals(newVal)) {
+            if ("Newest First".equals(newVal)) {
                 FXCollections.sort(data, java.util.Comparator.comparing((Booking b) -> b.getStartDatetime() == null ? "" : b.getStartDatetime()).reversed());
-            } else if ("Sort: Oldest First".equals(newVal)) {
+            } else if ("Oldest First".equals(newVal)) {
                 FXCollections.sort(data, java.util.Comparator.comparing(b -> b.getStartDatetime() == null ? "" : b.getStartDatetime()));
-            } else if ("Sort: Status".equals(newVal)) {
+            } else if ("Status".equals(newVal)) {
                 FXCollections.sort(data, java.util.Comparator.comparing(b -> b.getBookingStatus() == null ? "" : b.getBookingStatus()));
             }
         });
@@ -1760,6 +1918,8 @@ public class AdminDashboard {
         panel.getChildren().addAll(toolbar, table);
         contentArea.getChildren().add(panel);
         StackPane.setAlignment(panel, Pos.TOP_LEFT);
+        // Animate entrance
+        animatePanelEntrance(panel);
     }
 
     private void showReturnDialog(Booking booking) {
@@ -2174,10 +2334,11 @@ public class AdminDashboard {
         exportBtn.setOnAction(e -> showExportDialog());
 
         ComboBox<String> sortBox = new ComboBox<>();
-        sortBox.getItems().addAll("Sort: Recent First", "Sort: Oldest First", "Sort: Cost");
-        sortBox.setValue("Sort: Recent First");
+        // remove the "Sort:" prefix so labels are shorter
+        sortBox.getItems().addAll("Recent First", "Oldest First", "Cost");
+        sortBox.setValue("Recent First");
         sortBox.getStyleClass().add("form-select");
-        sortBox.setStyle("-fx-pref-width: 160px;");
+        sortBox.setPrefWidth(160);
 
         toolbar.getChildren().addAll(subtitle, sortBox, spacer, addBtn, exportBtn);
 
@@ -2290,11 +2451,11 @@ public class AdminDashboard {
 
         ObservableList<MaintenanceLog> data = FXCollections.observableArrayList(maintenanceDAO.getAllMaintenanceLogs());
         sortBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if ("Sort: Recent First".equals(newVal)) {
+            if ("Recent First".equals(newVal)) {
                 FXCollections.sort(data, java.util.Comparator.comparing((MaintenanceLog m) -> m.getStartDate() == null ? "" : m.getStartDate()).reversed());
-            } else if ("Sort: Oldest First".equals(newVal)) {
+            } else if ("Oldest First".equals(newVal)) {
                 FXCollections.sort(data, java.util.Comparator.comparing(m -> m.getStartDate() == null ? "" : m.getStartDate()));
-            } else if ("Sort: Cost".equals(newVal)) {
+            } else if ("Cost".equals(newVal)) {
                 FXCollections.sort(data, java.util.Comparator.comparing(MaintenanceLog::getPartsCost).reversed());
             }
         });
@@ -2307,6 +2468,8 @@ public class AdminDashboard {
         panel.getChildren().addAll(toolbar, table);
         contentArea.getChildren().add(panel);
         StackPane.setAlignment(panel, Pos.TOP_LEFT);
+        // Animate entrance
+        animatePanelEntrance(panel);
     }
 
     private void showAddMaintenanceDialog(ObservableList<MaintenanceLog> data) {
@@ -2540,6 +2703,8 @@ public class AdminDashboard {
         panel.getChildren().addAll(toolbar, tabBar, tableContainer);
         contentArea.getChildren().add(panel);
         StackPane.setAlignment(panel, Pos.TOP_LEFT);
+        // Animate entrance
+        animatePanelEntrance(panel);
 
         // Show Inventory logs by default
         showChangeLogTable(tableContainer, "Inventory");
@@ -2685,6 +2850,28 @@ public class AdminDashboard {
         });
 
         container.getChildren().addAll(filterBar, table);
+        // Animate the freshly populated container (toolbar/filter then table)
+        try {
+            // Fade filter bar then table with a slight stagger
+            if (!container.getChildren().isEmpty()) {
+                for (int i = 0; i < container.getChildren().size(); i++) {
+                    javafx.scene.Node n = container.getChildren().get(i);
+                    n.setOpacity(0);
+                    FadeTransition f = new FadeTransition(Duration.millis(320), n);
+                    f.setFromValue(0);
+                    f.setToValue(1);
+                    f.setDelay(Duration.millis(120 + i * 80));
+                    f.play();
+                    TranslateTransition t = new TranslateTransition(Duration.millis(320), n);
+                    t.setFromY(6);
+                    t.setToY(0);
+                    t.setDelay(Duration.millis(120 + i * 80));
+                    t.play();
+                }
+            }
+        } catch (Exception ex) {
+            // ignore
+        }
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -2902,6 +3089,8 @@ public class AdminDashboard {
         VBox panel = settingsScreen.getView();
         contentArea.getChildren().add(panel);
         StackPane.setAlignment(panel, Pos.TOP_LEFT);
+        // Animate settings panel on entrance
+        animatePanelEntrance(panel);
     }
 
 }

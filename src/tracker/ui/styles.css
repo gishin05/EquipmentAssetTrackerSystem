@@ -1,6 +1,6 @@
 /* ==========================================================================
    EQUIPMENT ASSET TRACKER SYSTEM — UNIVERSAL PRODUCTION STYLESHEET
-   Theme: Amethyst Light Pro (Updated to Obsidian Pro Palette)
+   Theme: Amethyst Light Pro (Updated to Atlas Palette)
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
@@ -62,7 +62,7 @@
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
-   1. SIDEBAR — Obsidian Pro Dark Navy Theme
+     1. SIDEBAR — Atlas Dark Navy Theme
    ═════════════════════════════════════════════════════════════════════════ */
 
 .sidebar,
@@ -157,11 +157,12 @@
 }
 
 /* Subtitle shown above tables / toolbars (e.g. booking requests, maintenance logs, audit logs)
-   Use explicit black color for improved contrast as requested. */
+   Match the Settings screen context style: use the secondary text color and slightly
+   larger font size so it visually aligns with Settings context labels. */
 .content-subtitle {
     -fx-font-family: "Poppins", sans-serif;
-    -fx-font-size: 13px;
-    -fx-text-fill: #000000; /* black */
+    -fx-font-size: 14px;
+    -fx-text-fill: -text-secondary; /* use same color as Settings context */
 }
 
 /* When the nav button is active/hovered/pressed, make icon + text white */
@@ -818,6 +819,18 @@
     -fx-background-insets: 0;
     -fx-padding: 0;
     -fx-background-color: -bg-input; /* ensure input background matches other inputs */
+}
+
+/* Ensure all ComboBox controls (including .form-select usage) use the same
+   text color and readable font size as Settings context labels. This affects
+   the editor text and list cells so the displayed text matches expectations. */
+.combo-box .list-cell,
+.combo-box .label,
+.combo-box .text,
+.combo-box .text-field,
+.combo-box .editor {
+    -fx-text-fill: -text-secondary;
+    -fx-font-size: 14px;
 }
 
 .form-select.combo-box,

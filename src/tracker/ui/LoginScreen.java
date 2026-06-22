@@ -7,6 +7,10 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import java.io.File;
+import java.io.InputStream;
 import javafx.util.Duration;
 
 import tracker.Main;
@@ -70,21 +74,41 @@ public class LoginScreen {
         // ── Logo block ──
         HBox logoRow = new HBox(12);
         logoRow.setAlignment(Pos.CENTER_LEFT);
-        StackPane logoIcon = new StackPane();
-        logoIcon.getStyleClass().add("login-logo-icon");
-        logoIcon.setMinSize(40, 40);
-        logoIcon.setMaxSize(40, 40);
-        Label logoIconLabel = new Label("⬡");
-        logoIconLabel.setStyle("-fx-text-fill: white; -fx-font-size: 18px;");
-        logoIcon.getChildren().add(logoIconLabel);
+        // Load the Atlas logo image safely (fall back if resource not found)
+        Image logoImage = safeLoadImage("/tracker/Logo/Atlas_logo.png");
 
-        VBox logoText = new VBox(2);
-        Label logoName = new Label("Obsidian Pro");
-        logoName.getStyleClass().add("login-logo-name");
-        Label logoSub = new Label("Equipment Asset Tracker");
-        logoSub.getStyleClass().add("login-logo-sub");
-        logoText.getChildren().addAll(logoName, logoSub);
-        logoRow.getChildren().addAll(logoIcon, logoText);
+        // Text alongside the logo: big "Atlas" (bold + white) with a smaller white subtitle beneath
+        Label atlasLabel = new Label("Atlas");
+        atlasLabel.getStyleClass().add("login-logo-title");
+        atlasLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: 800; -fx-text-fill: #ffffff;");
+        Label subtitleLabel = new Label("EQUIPMENT ASSET TRACKER");
+        subtitleLabel.getStyleClass().add("login-logo-subtitle");
+        subtitleLabel.setStyle("-fx-font-size: 11px; -fx-opacity: 0.95; -fx-text-fill: #ffffff; -fx-letter-spacing: 0.3px;");
+        VBox logoText = new VBox(2, atlasLabel, subtitleLabel);
+        logoText.setAlignment(Pos.CENTER_LEFT);
+
+        if (logoImage != null) {
+            // Make the logo smaller so the text can sit beside it comfortably
+            ImageView logoImg = new ImageView(logoImage);
+            logoImg.setFitWidth(64);
+            logoImg.setFitHeight(64);
+            logoImg.setPreserveRatio(true);
+            logoImg.getStyleClass().add("login-logo-icon");
+
+            // Put the image and the text side-by-side
+            logoRow.getChildren().addAll(logoImg, logoText);
+        } else {
+            // If the image isn't available, show the textual brand block (white + bold)
+            Label fallbackTitle = new Label("Atlas");
+            fallbackTitle.getStyleClass().add("login-logo-name");
+            fallbackTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: 800; -fx-text-fill: #ffffff;");
+            Label fallbackSub = new Label("EQUIPMENT ASSET TRACKER");
+            fallbackSub.getStyleClass().add("login-logo-subtitle");
+            fallbackSub.setStyle("-fx-font-size: 11px; -fx-opacity: 0.95; -fx-text-fill: #ffffff; -fx-letter-spacing: 0.3px;");
+            VBox fallbackBox = new VBox(2, fallbackTitle, fallbackSub);
+            fallbackBox.setAlignment(Pos.CENTER_LEFT);
+            logoRow.getChildren().add(fallbackBox);
+        }
 
         // ── Headline ──
         Label headline = new Label("Track Your\nHardware Smarter");
@@ -300,5 +324,26 @@ public class LoginScreen {
         shake.setAutoReverse(true);
         shake.setOnFinished(e -> node.setTranslateX(0));
         shake.play();
+    }
+
+    /** Attempts to load an image resource from the classpath. If not found,
+     * tries to load from the project's src folder so running from IDE still works.
+     * Returns null if the image cannot be located. */
+    private Image safeLoadImage(String resourcePath) {
+        try {
+            InputStream is = getClass().getResourceAsStream(resourcePath);
+            if (is != null) {
+                return new Image(is);
+            }
+            // Try loading from project src folder (useful when running from IDE without resources copied)
+            String userDir = System.getProperty("user.dir");
+            File f = new File(userDir + File.separator + "src" + File.separator + resourcePath.replaceFirst("^/", ""));
+            if (f.exists()) {
+                return new Image(f.toURI().toString());
+            }
+        } catch (Exception ex) {
+            // swallow and return null
+        }
+        return null;
     }
 }
