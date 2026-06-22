@@ -825,7 +825,13 @@ public class AdminDashboard {
         exportBtn.getStyleClass().addAll("button", "btn-secondary");
         exportBtn.setOnAction(e -> showExportDialog());
 
-        toolbar.getChildren().addAll(searchField, spacer, addBtn, exportBtn);
+        ComboBox<String> sortBox = new ComboBox<>();
+        sortBox.getItems().addAll("Sort: Name (A-Z)", "Sort: Name (Z-A)", "Sort: Status");
+        sortBox.setValue("Sort: Name (A-Z)");
+        sortBox.getStyleClass().add("form-select");
+        sortBox.setStyle("-fx-pref-width: 160px;");
+
+        toolbar.getChildren().addAll(searchField, sortBox, spacer, addBtn, exportBtn);
 
         // Table
         TableView<Equipment> table = new TableView<>();
@@ -915,6 +921,18 @@ public class AdminDashboard {
 
         // Load data
         ObservableList<Equipment> data = FXCollections.observableArrayList(equipmentDAO.getAllEquipment());
+        
+        sortBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if ("Sort: Name (A-Z)".equals(newVal)) {
+                FXCollections.sort(data, java.util.Comparator.comparing(eq -> eq.getEquipmentName() == null ? "" : eq.getEquipmentName()));
+            } else if ("Sort: Name (Z-A)".equals(newVal)) {
+                FXCollections.sort(data, java.util.Comparator.comparing((Equipment eq) -> eq.getEquipmentName() == null ? "" : eq.getEquipmentName()).reversed());
+            } else if ("Sort: Status".equals(newVal)) {
+                FXCollections.sort(data, java.util.Comparator.comparing(eq -> eq.getEquipmentStatus() == null ? "" : eq.getEquipmentStatus()));
+            }
+        });
+        FXCollections.sort(data, java.util.Comparator.comparing(eq -> eq.getEquipmentName() == null ? "" : eq.getEquipmentName()));
+
         FilteredList<Equipment> filteredData = new FilteredList<>(data, p -> true);
         table.setItems(filteredData);
 
@@ -1568,7 +1586,13 @@ public class AdminDashboard {
         exportBtn.getStyleClass().addAll("button", "btn-secondary");
         exportBtn.setOnAction(e -> showExportDialog());
 
-        toolbar.getChildren().addAll(subtitle, spacer, addBtn, exportBtn);
+        ComboBox<String> sortBox = new ComboBox<>();
+        sortBox.getItems().addAll("Sort: Newest First", "Sort: Oldest First", "Sort: Status");
+        sortBox.setValue("Sort: Newest First");
+        sortBox.getStyleClass().add("form-select");
+        sortBox.setStyle("-fx-pref-width: 160px;");
+
+        toolbar.getChildren().addAll(subtitle, sortBox, spacer, addBtn, exportBtn);
 
         // Table
         TableView<Booking> table = new TableView<>();
@@ -1720,7 +1744,18 @@ public class AdminDashboard {
         });
 
         table.getColumns().addAll(colId, colEquipName, colBorrowerName, colStart, colReturnAt, colPurpose, colStatus, colActions);
-        table.setItems(FXCollections.observableArrayList(bookingDAO.getAllBookings()));
+        ObservableList<Booking> data = FXCollections.observableArrayList(bookingDAO.getAllBookings());
+        sortBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if ("Sort: Newest First".equals(newVal)) {
+                FXCollections.sort(data, java.util.Comparator.comparing((Booking b) -> b.getStartDatetime() == null ? "" : b.getStartDatetime()).reversed());
+            } else if ("Sort: Oldest First".equals(newVal)) {
+                FXCollections.sort(data, java.util.Comparator.comparing(b -> b.getStartDatetime() == null ? "" : b.getStartDatetime()));
+            } else if ("Sort: Status".equals(newVal)) {
+                FXCollections.sort(data, java.util.Comparator.comparing(b -> b.getBookingStatus() == null ? "" : b.getBookingStatus()));
+            }
+        });
+        FXCollections.sort(data, java.util.Comparator.comparing((Booking b) -> b.getStartDatetime() == null ? "" : b.getStartDatetime()).reversed());
+        table.setItems(data);
 
         panel.getChildren().addAll(toolbar, table);
         contentArea.getChildren().add(panel);
@@ -2138,7 +2173,13 @@ public class AdminDashboard {
         exportBtn.getStyleClass().addAll("button", "btn-secondary");
         exportBtn.setOnAction(e -> showExportDialog());
 
-        toolbar.getChildren().addAll(subtitle, spacer, addBtn, exportBtn);
+        ComboBox<String> sortBox = new ComboBox<>();
+        sortBox.getItems().addAll("Sort: Recent First", "Sort: Oldest First", "Sort: Cost");
+        sortBox.setValue("Sort: Recent First");
+        sortBox.getStyleClass().add("form-select");
+        sortBox.setStyle("-fx-pref-width: 160px;");
+
+        toolbar.getChildren().addAll(subtitle, sortBox, spacer, addBtn, exportBtn);
 
         // Table
         TableView<MaintenanceLog> table = new TableView<>();
@@ -2248,6 +2289,16 @@ public class AdminDashboard {
         table.getColumns().addAll(colId, colEquip, colDefect, colCost, colTech, colStart, colEnd, colStatus);
 
         ObservableList<MaintenanceLog> data = FXCollections.observableArrayList(maintenanceDAO.getAllMaintenanceLogs());
+        sortBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if ("Sort: Recent First".equals(newVal)) {
+                FXCollections.sort(data, java.util.Comparator.comparing((MaintenanceLog m) -> m.getStartDate() == null ? "" : m.getStartDate()).reversed());
+            } else if ("Sort: Oldest First".equals(newVal)) {
+                FXCollections.sort(data, java.util.Comparator.comparing(m -> m.getStartDate() == null ? "" : m.getStartDate()));
+            } else if ("Sort: Cost".equals(newVal)) {
+                FXCollections.sort(data, java.util.Comparator.comparing(MaintenanceLog::getPartsCost).reversed());
+            }
+        });
+        FXCollections.sort(data, java.util.Comparator.comparing((MaintenanceLog m) -> m.getStartDate() == null ? "" : m.getStartDate()).reversed());
         table.setItems(data);
 
         // Add maintenance dialog
