@@ -6,10 +6,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.LinearGradient;
-import javafx.scene.paint.Stop;
-import javafx.scene.paint.CycleMethod;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
@@ -222,12 +218,12 @@ public class LoginScreen {
             User user = userDAO.authenticate(username, hash);
 
             if (user != null) {
-                if ("LIGHT".equalsIgnoreCase(user.getThemePreference())) {
-                    if (!view.getScene().getRoot().getStyleClass().contains("light-theme")) {
-                        view.getScene().getRoot().getStyleClass().add("light-theme");
+                if ("DARK".equalsIgnoreCase(user.getThemePreference())) {
+                    if (!view.getScene().getRoot().getStyleClass().contains("dark-theme")) {
+                        view.getScene().getRoot().getStyleClass().add("dark-theme");
                     }
                 } else {
-                    view.getScene().getRoot().getStyleClass().remove("light-theme");
+                    view.getScene().getRoot().getStyleClass().remove("dark-theme");
                 }
 
                 if ("ADMIN".equals(user.getUserRole())) {

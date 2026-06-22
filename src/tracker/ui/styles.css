@@ -1313,3 +1313,23 @@
     -fx-max-height: -1;      /* let layout compute height from content */
     -fx-min-height: 0;
 }
+
+/* ==========================================================================
+   DARK THEME OVERRIDES
+   These overrides take precedence when the .dark-theme class is added to the root
+   ========================================================================== */
+.dark-theme {
+    -bg-depth-0: #12101b; /* deeper dark background */
+    -bg-primary: #1a1825; /* surface dark */
+    -bg-card: #231f35;
+    -bg-input: #2a2740;
+    -bg-hover: #2d2946;
+    -bg-table-alt: #1f1c2d;
+
+    -text-primary: #f0f0fa;
+    -text-secondary: #9d9bb8;
+    -text-muted: #6b6885;
+    
+    -border-medium: #363251;
+    -border-strong: #4a456c;
+}

@@ -37,7 +37,7 @@ public class BorrowerPortal {
     // DAOs
     private BookingDAO bookingDAO = new BookingDAO();
     private EquipmentDAO equipmentDAO = new EquipmentDAO();
-    private UserDAO userDAO = new UserDAO();
+
 
     /**
      * Create the borrower portal.
@@ -61,26 +61,29 @@ public class BorrowerPortal {
         mainView.setTop(header);
 
         // ── Main Content Container ──
-        VBox mainContentLayout = new VBox(20);
-        mainContentLayout.setPadding(new Insets(24, 32, 24, 32));
-        // Use named CSS class so center area background can be controlled from styles.css
-        mainContentLayout.getStyleClass().add("main-content");
+        VBox mainViewContainer = new VBox(20);
+        mainViewContainer.getStyleClass().add("main-content");
+        mainViewContainer.setPadding(new Insets(24, 32, 24, 32));
 
         headerTitle = new Label("My Bookings");
         headerTitle.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: -text-primary;");
 
+        // ── Scrollable Content Area ──
         contentArea = new StackPane();
         contentArea.getStyleClass().add("content-area");
         contentArea.setPadding(new Insets(0));
         VBox.setVgrow(contentArea, Priority.ALWAYS);
 
-        mainContentLayout.getChildren().addAll(headerTitle, contentArea);
-
-        ScrollPane scrollPane = new ScrollPane(mainContentLayout);
+        ScrollPane scrollPane = new ScrollPane(contentArea);
         scrollPane.setFitToWidth(true);
-        scrollPane.setFitToHeight(true);
+        scrollPane.setFitToHeight(false);
         scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
-        mainView.setCenter(scrollPane);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+
+        mainViewContainer.getChildren().addAll(headerTitle, scrollPane);
+        mainView.setCenter(mainViewContainer);
 
         buildSidePanel();
         rootView.getChildren().addAll(mainView, sidePanel);
@@ -147,20 +150,12 @@ public class BorrowerPortal {
 
         Separator sep = new Separator();
 
-        Button settingsBtn = new Button("⚙️ Settings");
+        Button settingsBtn = new Button("\u2699 Settings");
         settingsBtn.getStyleClass().add("side-panel-btn");
         settingsBtn.setMaxWidth(Double.MAX_VALUE);
         settingsBtn.setOnAction(e -> {
             sidePanel.setVisible(false);
-            showUserSettingsDialog();
-        });
-
-        Button changePwdBtn = new Button("🔑 Change Password");
-        changePwdBtn.getStyleClass().add("side-panel-btn");
-        changePwdBtn.setMaxWidth(Double.MAX_VALUE);
-        changePwdBtn.setOnAction(e -> {
-            sidePanel.setVisible(false);
-            showChangePasswordDialog();
+            showSettings();
         });
 
         Region spring = new Region();
@@ -171,12 +166,12 @@ public class BorrowerPortal {
         logoutBtn.setMaxWidth(Double.MAX_VALUE);
         logoutBtn.setOnAction(e -> {
             if (rootView.getScene() != null) {
-                rootView.getScene().getRoot().getStyleClass().remove("light-theme");
+                rootView.getScene().getRoot().getStyleClass().remove("dark-theme");
             }
             mainApp.showLoginScreen();
         });
 
-        sidePanel.getChildren().addAll(title, roleLbl, sep, settingsBtn, changePwdBtn, spring, logoutBtn);
+        sidePanel.getChildren().addAll(title, roleLbl, sep, settingsBtn, spring, logoutBtn);
     }
 
     private Button createNavButton(String text, Runnable action) {
@@ -620,150 +615,27 @@ public class BorrowerPortal {
         label.setVisible(true);
         label.setManaged(true);
     }
-    private void showAlert(Alert.AlertType type, String title, String content) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.initOwner(mainApp.getPrimaryStage());
-        alert.showAndWait();
+
+    private void showSettings() {
+        headerTitle.setText("Settings");
+        contentArea.getChildren().clear();
+        
+        Runnable onThemeChanged = () -> {
+            if ("DARK".equalsIgnoreCase(currentUser.getThemePreference())) {
+                isLightMode = false;
+                if (!rootView.getScene().getRoot().getStyleClass().contains("dark-theme")) {
+                    rootView.getScene().getRoot().getStyleClass().add("dark-theme");
+                }
+            } else {
+                isLightMode = true;
+                rootView.getScene().getRoot().getStyleClass().remove("dark-theme");
+            }
+        };
+
+        SettingsScreen settingsScreen = new SettingsScreen(mainApp, currentUser, onThemeChanged);
+        VBox panel = settingsScreen.getView();
+        contentArea.getChildren().add(panel);
+        StackPane.setAlignment(panel, Pos.TOP_LEFT);
     }
 
-    private void showChangePasswordDialog() {
-        Dialog<Boolean> dialog = new Dialog<>();
-        dialog.setTitle("Change Password");
-        dialog.initOwner(mainApp.getPrimaryStage());
-
-        DialogPane dialogPane = dialog.getDialogPane();
-        dialogPane.setStyle("-fx-background-color: -bg-card; -fx-border-color: -border; -fx-border-radius: 12; -fx-background-radius: 12;");
-        dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-        Button cpOk = (Button) dialogPane.lookupButton(ButtonType.OK);
-        if (cpOk != null) {
-            cpOk.getStyleClass().addAll("button", "btn-primary");
-            cpOk.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold;");
-        }
-
-        GridPane grid = new GridPane();
-        grid.setHgap(16);
-        grid.setVgap(14);
-        grid.setPadding(new Insets(24));
-
-        PasswordField currentPwdField = new PasswordField();
-        currentPwdField.setPromptText("Current Password");
-        PasswordField newPwdField = new PasswordField();
-        newPwdField.setPromptText("New Password");
-        PasswordField confirmPwdField = new PasswordField();
-        confirmPwdField.setPromptText("Confirm New Password");
-
-        Label l1 = new Label("Current"); l1.getStyleClass().add("form-label");
-        Label l2 = new Label("New");     l2.getStyleClass().add("form-label");
-        Label l3 = new Label("Confirm"); l3.getStyleClass().add("form-label");
-
-        grid.addRow(0, l1, currentPwdField);
-        grid.addRow(1, l2, newPwdField);
-        grid.addRow(2, l3, confirmPwdField);
-
-        dialogPane.setContent(grid);
-
-        dialog.setResultConverter(button -> {
-            if (button == ButtonType.OK) {
-                String current = currentPwdField.getText();
-                String newPwd = newPwdField.getText();
-                String confirm = confirmPwdField.getText();
-
-                if (!currentUser.getPasswordHash().equals(current)) {
-                    showAlert(Alert.AlertType.ERROR, "Error", "Current password is incorrect!");
-                    return false;
-                }
-                if (newPwd.isEmpty() || !newPwd.equals(confirm)) {
-                    showAlert(Alert.AlertType.ERROR, "Error", "New passwords do not match or are empty!");
-                    return false;
-                }
-                
-                boolean updated = userDAO.updatePassword(currentUser.getUserId(), newPwd);
-                if (updated) {
-                    currentUser = userDAO.getUserById(currentUser.getUserId());
-                    showAlert(Alert.AlertType.INFORMATION, "Success", "Password updated successfully!");
-                } else {
-                    showAlert(Alert.AlertType.ERROR, "Error", "Failed to update password in database.");
-                }
-                return true;
-            }
-            return false;
-        });
-
-        dialog.showAndWait();
-    } 
-
-    private void showUserSettingsDialog() {
-        Dialog<Boolean> dialog = new Dialog<>();
-        dialog.setTitle("User Settings");
-        dialog.initOwner(mainApp.getPrimaryStage());
-
-        DialogPane dialogPane = dialog.getDialogPane();
-        dialogPane.setStyle("-fx-background-color: -bg-card; -fx-border-color: -border; -fx-border-radius: 12; -fx-background-radius: 12;");
-        dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-        Button usOk = (Button) dialogPane.lookupButton(ButtonType.OK);
-        if (usOk != null) {
-            usOk.getStyleClass().addAll("button", "btn-primary");
-            usOk.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold;");
-        }
-
-        GridPane grid = new GridPane();
-        grid.setHgap(16);
-        grid.setVgap(14);
-        grid.setPadding(new Insets(24));
-
-        TextField fullNameField = new TextField();
-        fullNameField.setPromptText("Full Name");
-        if (currentUser.getFullName() != null) fullNameField.setText(currentUser.getFullName());
-
-        TextField emailField = new TextField();
-        emailField.setPromptText("Email Address");
-        if (currentUser.getEmail() != null) emailField.setText(currentUser.getEmail());
-
-        ComboBox<String> themeBox = new ComboBox<>();
-        themeBox.getItems().addAll("LIGHT", "DARK");
-        String currentTheme = currentUser.getThemePreference() != null ? currentUser.getThemePreference() : "DARK";
-        themeBox.setValue(currentTheme);
-
-        Label l1 = new Label("Full Name"); l1.getStyleClass().add("form-label");
-        Label l2 = new Label("Email");     l2.getStyleClass().add("form-label");
-        Label l3 = new Label("Theme");     l3.getStyleClass().add("form-label");
-
-        grid.addRow(0, l1, fullNameField);
-        grid.addRow(1, l2, emailField);
-        grid.addRow(2, l3, themeBox);
-
-        dialogPane.setContent(grid);
-
-        dialog.setResultConverter(button -> {
-            if (button == ButtonType.OK) {
-                currentUser.setFullName(fullNameField.getText());
-                currentUser.setEmail(emailField.getText());
-                currentUser.setThemePreference(themeBox.getValue());
-                
-                boolean updated = userDAO.updateUserSettings(currentUser);
-                if (updated) {
-                    // Apply theme immediately
-                    if ("LIGHT".equalsIgnoreCase(themeBox.getValue())) {
-                        isLightMode = true;
-                        if (!rootView.getScene().getRoot().getStyleClass().contains("light-theme")) {
-                            rootView.getScene().getRoot().getStyleClass().add("light-theme");
-                        }
-                    } else {
-                        isLightMode = false;
-                        rootView.getScene().getRoot().getStyleClass().remove("light-theme");
-                    }
-                    showAlert(Alert.AlertType.INFORMATION, "Success", "Settings updated successfully!");
-                } else {
-                    showAlert(Alert.AlertType.ERROR, "Error", "Failed to update settings in database.");
-                }
-                return true;
-            }
-            return false;
-        });
-
-        dialog.showAndWait();
-    }
 }

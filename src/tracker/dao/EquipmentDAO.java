@@ -7,14 +7,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EquipmentDAO {
-    
+
     public List<Equipment> getAllEquipment() {
         List<Equipment> equipmentList = new ArrayList<>();
         String query = "SELECT * FROM equipment";
         try (Connection conn = DatabaseManager.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
-            
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(query)) {
+
             while (rs.next()) {
                 equipmentList.add(mapResultSetToEquipment(rs));
             }
@@ -23,12 +23,12 @@ public class EquipmentDAO {
         }
         return equipmentList;
     }
-    
+
     public boolean addEquipment(Equipment equipment) {
         String query = "INSERT INTO equipment (equipment_name, serial_number, category_id, technical_specifications, storage_location, purchase_cost, purchase_date, equipment_status, assigned_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
-            
+                PreparedStatement pstmt = conn.prepareStatement(query)) {
+
             setEquipmentParams(pstmt, equipment);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -36,12 +36,12 @@ public class EquipmentDAO {
         }
         return false;
     }
-    
+
     public boolean updateEquipment(Equipment equipment) {
         String query = "UPDATE equipment SET equipment_name = ?, serial_number = ?, category_id = ?, technical_specifications = ?, storage_location = ?, purchase_cost = ?, purchase_date = ?, equipment_status = ?, assigned_to = ? WHERE equipment_id = ?";
         try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
-            
+                PreparedStatement pstmt = conn.prepareStatement(query)) {
+
             setEquipmentParams(pstmt, equipment);
             pstmt.setInt(10, equipment.getEquipmentId());
             return pstmt.executeUpdate() > 0;
@@ -50,11 +50,11 @@ public class EquipmentDAO {
         }
         return false;
     }
-    
+
     public boolean deleteEquipment(int equipmentId) {
         String query = "DELETE FROM equipment WHERE equipment_id = ?";
         try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
+                PreparedStatement pstmt = conn.prepareStatement(query)) {
             pstmt.setInt(1, equipmentId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -62,11 +62,11 @@ public class EquipmentDAO {
         }
         return false;
     }
-    
+
     public Equipment getEquipmentById(int id) {
         String query = "SELECT * FROM equipment WHERE equipment_id = ?";
         try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
+                PreparedStatement pstmt = conn.prepareStatement(query)) {
             pstmt.setInt(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -78,7 +78,7 @@ public class EquipmentDAO {
         }
         return null;
     }
-    
+
     private void setEquipmentParams(PreparedStatement pstmt, Equipment equipment) throws SQLException {
         pstmt.setString(1, equipment.getEquipmentName());
         pstmt.setString(2, equipment.getSerialNumber());
@@ -94,7 +94,7 @@ public class EquipmentDAO {
             pstmt.setNull(9, Types.VARCHAR);
         }
     }
-    
+
     private Equipment mapResultSetToEquipment(ResultSet rs) throws SQLException {
         Equipment e = new Equipment();
         e.setEquipmentId(rs.getInt("equipment_id"));
@@ -106,7 +106,7 @@ public class EquipmentDAO {
         e.setPurchaseCost(rs.getDouble("purchase_cost"));
         e.setPurchaseDate(rs.getString("purchase_date"));
         e.setEquipmentStatus(rs.getString("equipment_status"));
-        
+
         String assignedTo = rs.getString("assigned_to");
         if (!rs.wasNull()) {
             e.setAssignedTo(assignedTo);

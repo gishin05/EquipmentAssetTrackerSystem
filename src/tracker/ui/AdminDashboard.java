@@ -44,7 +44,6 @@ public class AdminDashboard {
     private AuditDAO auditDAO = new AuditDAO();
     private CategoryDAO categoryDAO = new CategoryDAO();
     private ChangeLogDAO changeLogDAO = new ChangeLogDAO();
-    private UserDAO userDAO = new UserDAO();
 
     /**
      * Create the admin dashboard.
@@ -70,20 +69,15 @@ public class AdminDashboard {
         // ── Main Content Container ──
         // Use zero vertical spacing so the header can visually flush to the separator;
         // specific vertical gaps are managed via padding/margins on the children.
-        VBox mainContentLayout = new VBox(0);
-        mainContentLayout.setPadding(new Insets(24, 32, 24, 32));
-        // Use a named CSS class so the background can be controlled from styles.css
-        mainContentLayout.getStyleClass().add("main-content");
+        // ── Main Content Container ──
+        VBox mainViewContainer = new VBox(0);
+        mainViewContainer.getStyleClass().add("main-content");
      
         // Header Section (Title + Subtitle on Left, Icons on Right)
         HBox headerSection = new HBox();
         headerSection.setAlignment(Pos.CENTER_LEFT);
-        // Use shared header-bar CSS so the top bar remains white and consistent
         headerSection.getStyleClass().add("header-bar");
-        // Add internal padding so the header has vertical space and matches other content
         headerSection.setPadding(new Insets(18, 32, 18, 32));
-        // Pull the header horizontally to the edges of the content area (matches separator negative margins)
-        VBox.setMargin(headerSection, new Insets(0, -32, 0, -32));
         
         VBox titleBox = new VBox(4);
         headerTitle = new Label("Dashboard");
@@ -99,9 +93,13 @@ public class AdminDashboard {
         HBox rightIcons = new HBox(15);
         rightIcons.setAlignment(Pos.CENTER);
         
-        Label bellIcon = new Label("🔔");
+        Label bellIcon = new Label("\uD83D\uDD14");
         bellIcon.setStyle("-fx-background-color: #f4f3fb; -fx-text-fill: #9d9bb8; -fx-font-size: 14px; -fx-padding: 8; -fx-background-radius: 20; -fx-cursor: hand;");
         
+        bellIcon.setOnMouseClicked(e -> {
+            showNotificationPopup(bellIcon);
+        });
+
         Label avatar = new Label("A");
         avatar.setStyle("-fx-background-color: #5b47e0; -fx-text-fill: #ffffff; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 8 12; -fx-background-radius: 20; -fx-cursor: hand;");
         
@@ -111,20 +109,30 @@ public class AdminDashboard {
         // ── Separator line below the header ──
         Separator separator = new Separator();
         separator.setStyle("-fx-background-color: #e4e7ec; -fx-padding: 0;");
-        VBox.setMargin(separator, new Insets(0, -32, 8, -32));
+     
+        // ── Scrollable Content Area ──
+        VBox scrollContentLayout = new VBox(0);
+        scrollContentLayout.setPadding(new Insets(24, 32, 24, 32));
+        scrollContentLayout.getStyleClass().add("main-content");
      
         contentArea = new StackPane();
         contentArea.getStyleClass().add("content-area");
         contentArea.setPadding(new Insets(0));
         VBox.setVgrow(contentArea, Priority.ALWAYS);
      
-        mainContentLayout.getChildren().addAll(headerSection, separator, contentArea);
+        scrollContentLayout.getChildren().add(contentArea);
      
-        ScrollPane scrollPane = new ScrollPane(mainContentLayout);
+        ScrollPane scrollPane = new ScrollPane(scrollContentLayout);
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
         scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
-        mainView.setCenter(scrollPane);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+        
+        mainViewContainer.getChildren().addAll(headerSection, separator, scrollPane);
+        mainView.setCenter(mainViewContainer);
      
         buildSidePanel();
         rootView.getChildren().addAll(mainView, sidePanel);
@@ -219,27 +227,22 @@ public class AdminDashboard {
         Label roleBadgeLabel = new Label("ADMIN");
         roleBadgeLabel.getStyleClass().add("header-role-badge");
      
-        Button changePwdBtn = new Button("🔑 Change Password");
-        changePwdBtn.getStyleClass().add("side-panel-btn");
-        changePwdBtn.setMaxWidth(Double.MAX_VALUE);
-        changePwdBtn.setOnAction(e -> showChangePasswordDialog());
-     
-        Button settingsBtn = new Button("⚙️ Settings");
+        Button settingsBtn = new Button("\u2699 Settings");
         settingsBtn.getStyleClass().add("side-panel-btn");
         settingsBtn.setMaxWidth(Double.MAX_VALUE);
-        settingsBtn.setOnAction(e -> showUserSettingsDialog());
+        settingsBtn.setOnAction(e -> showSettings());
 
         Button logoutBtn = new Button("⏻  Logout");
         logoutBtn.getStyleClass().add("side-panel-btn-logout");
         logoutBtn.setMaxWidth(Double.MAX_VALUE);
         logoutBtn.setOnAction(e -> {
             if (rootView.getScene() != null) {
-                rootView.getScene().getRoot().getStyleClass().remove("light-theme");
+                rootView.getScene().getRoot().getStyleClass().remove("dark-theme");
             }
             mainApp.showLoginScreen();
         });
      
-        userStrip.getChildren().addAll(changePwdBtn, settingsBtn, logoutBtn);
+        userStrip.getChildren().addAll(settingsBtn, logoutBtn);
      
         // ── ASSEMBLE SIDEBAR ────────────────────────────────────
         sidebar.getChildren().addAll(brandingBlock, navBtnContainer, userStrip);
@@ -315,6 +318,143 @@ public class AdminDashboard {
         StackPane.setAlignment(sidePanel, Pos.BOTTOM_LEFT);
         StackPane.setMargin(sidePanel, new Insets(0, 0, 20, 255));
         sidePanel.setVisible(false);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  NOTIFICATION POPUP
+    // ═══════════════════════════════════════════════════════════
+
+    private javafx.stage.Popup activeNotificationPopup;
+
+    private void showNotificationPopup(javafx.scene.Node anchor) {
+        // Close existing popup if open
+        if (activeNotificationPopup != null && activeNotificationPopup.isShowing()) {
+            activeNotificationPopup.hide();
+            activeNotificationPopup = null;
+            return;
+        }
+
+        javafx.stage.Popup popup = new javafx.stage.Popup();
+        popup.setAutoHide(true);
+        activeNotificationPopup = popup;
+
+        VBox container = new VBox(0);
+        container.setMinWidth(340);
+        container.setMaxWidth(340);
+        container.setStyle(
+            "-fx-background-color: -bg-card; -fx-background-radius: 12; " +
+            "-fx-border-color: -border; -fx-border-radius: 12; " +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 16, 0, 0, 4);"
+        );
+
+        // Header
+        HBox header = new HBox();
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setPadding(new Insets(14, 16, 10, 16));
+        Label titleLbl = new Label("Notifications");
+        titleLbl.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: -text-primary;");
+        header.getChildren().add(titleLbl);
+
+        Separator sep = new Separator();
+
+        VBox itemsBox = new VBox(0);
+        itemsBox.setPadding(new Insets(6, 0, 6, 0));
+
+        // ── Gather real notifications ──
+        List<Booking> allBookings = bookingDAO.getAllBookings();
+        List<Equipment> allEquipment = equipmentDAO.getAllEquipment();
+
+        // 1. Pending bookings needing approval
+        long pendingCount = allBookings.stream()
+            .filter(b -> "PENDING".equals(b.getBookingStatus()))
+            .count();
+        if (pendingCount > 0) {
+            itemsBox.getChildren().add(buildNotifItem(
+                "\u23F3", "#f59e0b",
+                pendingCount + " booking" + (pendingCount > 1 ? "s" : "") + " awaiting approval",
+                "Review and approve pending requests"
+            ));
+        }
+
+        // 2. Overdue returns (approved bookings past expected return date)
+        String today = java.time.LocalDate.now().toString();
+        long overdueCount = allBookings.stream()
+            .filter(b -> "APPROVED".equals(b.getBookingStatus()))
+            .filter(b -> b.getExpectedReturnDatetime() != null && b.getExpectedReturnDatetime().compareTo(today) < 0)
+            .count();
+        if (overdueCount > 0) {
+            itemsBox.getChildren().add(buildNotifItem(
+                "\u26A0", "#ef4444",
+                overdueCount + " overdue return" + (overdueCount > 1 ? "s" : ""),
+                "Equipment not returned by expected date"
+            ));
+        }
+
+        // 3. Equipment in maintenance
+        long maintCount = allEquipment.stream()
+            .filter(eq -> "UNDER_MAINTENANCE".equals(eq.getEquipmentStatus()))
+            .count();
+        if (maintCount > 0) {
+            itemsBox.getChildren().add(buildNotifItem(
+                "\uD83D\uDD27", "#3b82f6",
+                maintCount + " equipment in maintenance",
+                "Items currently unavailable for booking"
+            ));
+        }
+
+        // 4. Low availability warning
+        long availableCount = allEquipment.stream()
+            .filter(eq -> "AVAILABLE".equals(eq.getEquipmentStatus()))
+            .count();
+        long totalEquip = allEquipment.size();
+        if (totalEquip > 0 && availableCount * 100 / totalEquip < 20) {
+            itemsBox.getChildren().add(buildNotifItem(
+                "\uD83D\uDCE6", "#8b5cf6",
+                "Low equipment availability",
+                "Only " + availableCount + " of " + totalEquip + " items available"
+            ));
+        }
+
+        // If no notifications
+        if (itemsBox.getChildren().isEmpty()) {
+            Label emptyLbl = new Label("You're all caught up!");
+            emptyLbl.setStyle("-fx-text-fill: -text-secondary; -fx-font-size: 13px; -fx-padding: 20 0;");
+            emptyLbl.setMaxWidth(Double.MAX_VALUE);
+            emptyLbl.setAlignment(Pos.CENTER);
+            itemsBox.getChildren().add(emptyLbl);
+        }
+
+        container.getChildren().addAll(header, sep, itemsBox);
+        popup.getContent().add(container);
+
+        // Position below the bell icon, aligned to the right
+        javafx.geometry.Bounds bounds = anchor.localToScreen(anchor.getBoundsInLocal());
+        popup.show(anchor, bounds.getMaxX() - 340, bounds.getMaxY() + 8);
+    }
+
+    private HBox buildNotifItem(String iconText, String iconColor, String title, String subtitle) {
+        HBox row = new HBox(12);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.setPadding(new Insets(10, 16, 10, 16));
+        row.setStyle("-fx-cursor: hand;");
+        row.setOnMouseEntered(e -> row.setStyle("-fx-background-color: -bg-hover; -fx-cursor: hand;"));
+        row.setOnMouseExited(e -> row.setStyle("-fx-cursor: hand;"));
+
+        Label icon = new Label(iconText);
+        icon.setStyle("-fx-font-size: 18px; -fx-min-width: 32; -fx-alignment: center;");
+
+        VBox textBox = new VBox(2);
+        Label titleLbl = new Label(title);
+        titleLbl.setStyle("-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: -text-primary;");
+        titleLbl.setWrapText(true);
+        Label subLbl = new Label(subtitle);
+        subLbl.setStyle("-fx-font-size: 11px; -fx-text-fill: -text-secondary;");
+        subLbl.setWrapText(true);
+        textBox.getChildren().addAll(titleLbl, subLbl);
+        HBox.setHgrow(textBox, Priority.ALWAYS);
+
+        row.getChildren().addAll(icon, textBox);
+        return row;
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -426,7 +566,7 @@ public class AdminDashboard {
         
         StackPane donutContainer = new StackPane();
         javafx.scene.shape.Circle innerHole = new javafx.scene.shape.Circle(40);
-        innerHole.setFill(javafx.scene.paint.Color.WHITE); // Or match card background
+        innerHole.setStyle("-fx-fill: -bg-card;");
         Label totalLbl = new Label(String.valueOf(allEquipment.size()));
         totalLbl.setStyle("-fx-font-family: 'Poppins'; -fx-font-weight: 700; -fx-font-size: 18px; -fx-text-fill: -text-primary;");
         donutContainer.getChildren().addAll(statusChart, innerHole, totalLbl);
@@ -582,17 +722,25 @@ public class AdminDashboard {
         });
 
         TableColumn<Booking, Void> cAction = new TableColumn<>("");
-        cAction.setMaxWidth(40);
+        cAction.setMinWidth(60);
+        cAction.setMaxWidth(60);
         cAction.setCellFactory(col -> new TableCell<>() {
             private final Button btn = new Button("•••");
             {
                 btn.setStyle("-fx-background-color: transparent; -fx-text-fill: -text-secondary; -fx-cursor: hand; -fx-font-size: 14px;");
+                btn.setOnAction(e -> {
+                    Booking b = getTableView().getItems().get(getIndex());
+                    showBookingDetailsDialog(b);
+                });
             }
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) setGraphic(null);
-                else setGraphic(btn);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(btn);
+                }
             }
         });
 
@@ -673,11 +821,11 @@ public class AdminDashboard {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button refreshBtn = new Button("\u21BB Refresh");
-        refreshBtn.getStyleClass().add("button");
-        refreshBtn.setOnAction(e -> showInventory());
+        Button exportBtn = new Button("\u2B07 Export");
+        exportBtn.getStyleClass().addAll("button", "btn-secondary");
+        exportBtn.setOnAction(e -> showExportDialog());
 
-        toolbar.getChildren().addAll(searchField, spacer, addBtn, refreshBtn);
+        toolbar.getChildren().addAll(searchField, spacer, addBtn, exportBtn);
 
         // Table
         TableView<Equipment> table = new TableView<>();
@@ -788,6 +936,112 @@ public class AdminDashboard {
         panel.getChildren().addAll(statsBar, toolbar, table);
         contentArea.getChildren().add(panel);
         StackPane.setAlignment(panel, Pos.TOP_LEFT);
+    }
+
+    private void showBookingDetailsDialog(Booking booking) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Booking Details");
+        dialog.initOwner(mainApp.getPrimaryStage());
+
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.getStyleClass().add("form-dialog");
+        dialogPane.setStyle(
+            "-fx-background-color: #1a1a2e; -fx-border-color: #2a2a45; -fx-border-radius: 16; -fx-background-radius: 16;"
+        );
+        dialogPane.getButtonTypes().addAll(ButtonType.CLOSE);
+
+        Button closeBtn = (Button) dialogPane.lookupButton(ButtonType.CLOSE);
+        if (closeBtn != null) {
+            closeBtn.getStyleClass().addAll("button", "btn-primary");
+            closeBtn.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold;");
+        }
+
+        VBox content = new VBox(20);
+        content.setPadding(new Insets(24));
+        content.setMinWidth(460);
+        content.getStyleClass().add("modal-card");
+
+        Label titleLbl = new Label("Booking Information");
+        titleLbl.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #e8e8f0;");
+
+        Label subtitleLbl = new Label("Full booking history and status details");
+        subtitleLbl.setStyle("-fx-font-size: 13px; -fx-text-fill: #8888a8;");
+
+        Separator sep = new Separator();
+        sep.setStyle("-fx-padding: 0 0 10 0;");
+
+        GridPane grid = new GridPane();
+        grid.setHgap(20);
+        grid.setVgap(16);
+        grid.getStyleClass().add("form-grid");
+
+        UserDAO uDao = new UserDAO();
+        String borrowerName = uDao.getUserMap().getOrDefault(booking.getBorrowerId(), "User ID: " + booking.getBorrowerId());
+        
+        Equipment eq = equipmentDAO.getAllEquipment().stream().filter(e -> e.getEquipmentId() == booking.getEquipmentId()).findFirst().orElse(null);
+        String equipmentName = eq != null ? eq.getEquipmentName() : "Equip ID: " + booking.getEquipmentId();
+
+        int row = 0;
+        addDetailRow(grid, row++, "Booking ID", String.valueOf(booking.getBookingId()));
+        addDetailRow(grid, row++, "Equipment", equipmentName);
+        addDetailRow(grid, row++, "Borrower", borrowerName);
+        addDetailRow(grid, row++, "Start Date", formatDate(booking.getStartDatetime()));
+        addDetailRow(grid, row++, "Return Date", formatDate(booking.getExpectedReturnDatetime()));
+        addDetailRow(grid, row++, "Purpose", booking.getPurposeDescription());
+
+        Label lblStatus = new Label("Status");
+        lblStatus.getStyleClass().add("form-label");
+        Label valStatus = new Label(booking.getBookingStatus());
+        valStatus.setStyle("-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: -text-primary;");
+        grid.addRow(row++, lblStatus, valStatus);
+
+        content.getChildren().addAll(titleLbl, subtitleLbl, sep, grid);
+        
+        // Add action buttons based on status
+        HBox actionBox = new HBox(10);
+        actionBox.setAlignment(Pos.CENTER_RIGHT);
+        actionBox.setPadding(new Insets(10, 0, 0, 0));
+        
+        if ("PENDING".equals(booking.getBookingStatus())) {
+            Button approveBtn = new Button("Approve");
+            approveBtn.getStyleClass().addAll("button", "btn-success");
+            approveBtn.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold;");
+            approveBtn.setOnAction(e -> {
+                bookingDAO.updateBookingStatus(booking.getBookingId(), "APPROVED", currentUser.getUserId(), null);
+                dialog.setResult(null);
+                dialog.close();
+                showDashboard();
+            });
+            
+            Button rejectBtn = new Button("Reject");
+            rejectBtn.getStyleClass().addAll("button", "btn-danger");
+            rejectBtn.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold;");
+            rejectBtn.setOnAction(e -> {
+                bookingDAO.updateBookingStatus(booking.getBookingId(), "REJECTED", currentUser.getUserId(), "Rejected by admin");
+                dialog.setResult(null);
+                dialog.close();
+                showDashboard();
+            });
+            
+            actionBox.getChildren().addAll(rejectBtn, approveBtn);
+            content.getChildren().add(actionBox);
+        } else if ("APPROVED".equals(booking.getBookingStatus())) {
+            Button returnBtn = new Button("Mark Returned");
+            returnBtn.getStyleClass().addAll("button", "btn-primary");
+            returnBtn.setStyle("-fx-padding: 8 20; -fx-cursor: hand; -fx-font-weight: bold;");
+            returnBtn.setOnAction(e -> {
+                dialog.setResult(null);
+                dialog.close();
+                showReturnDialog(booking);
+            });
+            
+            actionBox.getChildren().add(returnBtn);
+            content.getChildren().add(actionBox);
+        }
+
+        dialogPane.setContent(content);
+
+        dialog.showAndWait();
     }
 
     private void showEquipmentDetailsDialog(Equipment eq) {
@@ -944,7 +1198,7 @@ public class AdminDashboard {
         long availablePct = total > 0 ? (available * 100 / total) : 0;
         
         statsBar.getChildren().addAll(
-            buildStatCard("TOTAL EQUIPMENT", String.valueOf(total), "↑ 3 this month", "total", "💼"),
+            buildStatCard("TOTAL EQUIPMENT", String.valueOf(total), "", "total", "💼"),
             buildStatCard("AVAILABLE", String.valueOf(available), availablePct + "% of fleet", "available", "✓"),
             buildStatCard("BORROWED", String.valueOf(borrowed), borrowed + " overdue", "borrowed", "♡"),
             buildStatCard("IN MAINTENANCE", String.valueOf(inMaint), "Needs attention", "maintenance", "⏱")
@@ -970,10 +1224,13 @@ public class AdminDashboard {
         valLbl.getStyleClass().addAll("metric-value", "metric-value-" + type);
         
         // Badge
-        Label badge = new Label(badgeText);
-        badge.getStyleClass().addAll("metric-badge", "metric-badge-" + type);
-        
-        card.getChildren().addAll(icon, titleLbl, valLbl, badge);
+        if (badgeText != null && !badgeText.trim().isEmpty()) {
+            Label badge = new Label(badgeText);
+            badge.getStyleClass().addAll("metric-badge", "metric-badge-" + type);
+            card.getChildren().addAll(icon, titleLbl, valLbl, badge);
+        } else {
+            card.getChildren().addAll(icon, titleLbl, valLbl);
+        }
         return card;
     }
 
@@ -1307,11 +1564,11 @@ public class AdminDashboard {
         addBtn.setId("add-booking");
         addBtn.setOnAction(e -> showAddBookingDialog());
 
-        Button refreshBtn = new Button("↻ Refresh");
-        refreshBtn.getStyleClass().add("button");
-        refreshBtn.setOnAction(e -> showLoanApprovals());
+        Button exportBtn = new Button("\u2B07 Export");
+        exportBtn.getStyleClass().addAll("button", "btn-secondary");
+        exportBtn.setOnAction(e -> showExportDialog());
 
-        toolbar.getChildren().addAll(subtitle, spacer, addBtn, refreshBtn);
+        toolbar.getChildren().addAll(subtitle, spacer, addBtn, exportBtn);
 
         // Table
         TableView<Booking> table = new TableView<>();
@@ -1877,11 +2134,11 @@ public class AdminDashboard {
         addBtn.getStyleClass().addAll("button", "btn-primary");
         addBtn.setId("add-maintenance");
 
-        Button refreshBtn = new Button("\u21BB Refresh");
-        refreshBtn.getStyleClass().add("button");
-        refreshBtn.setOnAction(e -> showMaintenance());
+        Button exportBtn = new Button("\u2B07 Export");
+        exportBtn.getStyleClass().addAll("button", "btn-secondary");
+        exportBtn.setOnAction(e -> showExportDialog());
 
-        toolbar.getChildren().addAll(subtitle, spacer, addBtn, refreshBtn);
+        toolbar.getChildren().addAll(subtitle, spacer, addBtn, exportBtn);
 
         // Table
         TableView<MaintenanceLog> table = new TableView<>();
@@ -2168,7 +2425,6 @@ public class AdminDashboard {
 
     private Button activeLogTabBtn; // tracks the active sub-header button
 
-    @SuppressWarnings("unchecked")
     private void showAuditLogs() {
         headerTitle.setText("Logs");
         contentArea.getChildren().clear();
@@ -2575,129 +2831,26 @@ public class AdminDashboard {
         alert.showAndWait();
     }
 
-    private void showChangePasswordDialog() {
-        Dialog<Boolean> dialog = new Dialog<>();
-        dialog.setTitle("Change Password");
-        dialog.initOwner(mainApp.getPrimaryStage());
-
-        DialogPane dialogPane = dialog.getDialogPane();
-        dialogPane.setStyle("-fx-background-color: -bg-card; -fx-border-color: -border; -fx-border-radius: 12; -fx-background-radius: 12;");
-        dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        GridPane grid = new GridPane();
-        grid.setHgap(16);
-        grid.setVgap(14);
-        grid.setPadding(new Insets(24));
-
-        PasswordField currentPwdField = new PasswordField();
-        currentPwdField.setPromptText("Current Password");
-        PasswordField newPwdField = new PasswordField();
-        newPwdField.setPromptText("New Password");
-        PasswordField confirmPwdField = new PasswordField();
-        confirmPwdField.setPromptText("Confirm New Password");
-
-        Label l1 = new Label("Current"); l1.getStyleClass().add("form-label");
-        Label l2 = new Label("New");     l2.getStyleClass().add("form-label");
-        Label l3 = new Label("Confirm"); l3.getStyleClass().add("form-label");
-
-        grid.addRow(0, l1, currentPwdField);
-        grid.addRow(1, l2, newPwdField);
-        grid.addRow(2, l3, confirmPwdField);
-
-        dialogPane.setContent(grid);
-
-        dialog.setResultConverter(button -> {
-            if (button == ButtonType.OK) {
-                String current = currentPwdField.getText();
-                String newPwd = newPwdField.getText();
-                String confirm = confirmPwdField.getText();
-
-                if (!currentUser.getPasswordHash().equals(current)) {
-                    showAlert(Alert.AlertType.ERROR, "Error", "Current password is incorrect!");
-                    return false;
+    private void showSettings() {
+        headerTitle.setText("Settings");
+        contentArea.getChildren().clear();
+        
+        Runnable onThemeChanged = () -> {
+            if ("DARK".equalsIgnoreCase(currentUser.getThemePreference())) {
+                isLightMode = false;
+                if (!rootView.getScene().getRoot().getStyleClass().contains("dark-theme")) {
+                    rootView.getScene().getRoot().getStyleClass().add("dark-theme");
                 }
-                if (newPwd.isEmpty() || !newPwd.equals(confirm)) {
-                    showAlert(Alert.AlertType.ERROR, "Error", "New passwords do not match or are empty!");
-                    return false;
-                }
-                
-                boolean updated = userDAO.updatePassword(currentUser.getUserId(), newPwd);
-                if (updated) {
-                    currentUser = userDAO.getUserById(currentUser.getUserId());
-                    showAlert(Alert.AlertType.INFORMATION, "Success", "Password updated successfully!");
-                } else {
-                    showAlert(Alert.AlertType.ERROR, "Error", "Failed to update password in database.");
-                }
-                return true;
+            } else {
+                isLightMode = true;
+                rootView.getScene().getRoot().getStyleClass().remove("dark-theme");
             }
-            return false;
-        });
+        };
 
-        dialog.showAndWait();
+        SettingsScreen settingsScreen = new SettingsScreen(mainApp, currentUser, onThemeChanged);
+        VBox panel = settingsScreen.getView();
+        contentArea.getChildren().add(panel);
+        StackPane.setAlignment(panel, Pos.TOP_LEFT);
     }
 
-    private void showUserSettingsDialog() {
-        Dialog<Boolean> dialog = new Dialog<>();
-        dialog.setTitle("User Settings");
-        dialog.initOwner(mainApp.getPrimaryStage());
-
-        DialogPane dialogPane = dialog.getDialogPane();
-        dialogPane.setStyle("-fx-background-color: -bg-card; -fx-border-color: -border; -fx-border-radius: 12; -fx-background-radius: 12;");
-        dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        GridPane grid = new GridPane();
-        grid.setHgap(16);
-        grid.setVgap(14);
-        grid.setPadding(new Insets(24));
-
-        TextField fullNameField = new TextField();
-        fullNameField.setPromptText("Full Name");
-        if (currentUser.getFullName() != null) fullNameField.setText(currentUser.getFullName());
-
-        TextField emailField = new TextField();
-        emailField.setPromptText("Email Address");
-        if (currentUser.getEmail() != null) emailField.setText(currentUser.getEmail());
-
-        ComboBox<String> themeBox = new ComboBox<>();
-        themeBox.getItems().addAll("LIGHT", "DARK");
-        String currentTheme = currentUser.getThemePreference() != null ? currentUser.getThemePreference() : "DARK";
-        themeBox.setValue(currentTheme);
-
-        Label l1 = new Label("Full Name"); l1.getStyleClass().add("form-label");
-        Label l2 = new Label("Email");     l2.getStyleClass().add("form-label");
-        Label l3 = new Label("Theme");     l3.getStyleClass().add("form-label");
-
-        grid.addRow(0, l1, fullNameField);
-        grid.addRow(1, l2, emailField);
-        grid.addRow(2, l3, themeBox);
-
-        dialogPane.setContent(grid);
-
-        dialog.setResultConverter(button -> {
-            if (button == ButtonType.OK) {
-                currentUser.setFullName(fullNameField.getText());
-                currentUser.setEmail(emailField.getText());
-                currentUser.setThemePreference(themeBox.getValue());
-                
-                boolean updated = userDAO.updateUserSettings(currentUser);
-                if (updated) {
-                    // Apply theme immediately
-                    if ("LIGHT".equalsIgnoreCase(themeBox.getValue())) {
-                        if (!rootView.getScene().getRoot().getStyleClass().contains("light-theme")) {
-                            rootView.getScene().getRoot().getStyleClass().add("light-theme");
-                        }
-                    } else {
-                        rootView.getScene().getRoot().getStyleClass().remove("light-theme");
-                    }
-                    showAlert(Alert.AlertType.INFORMATION, "Success", "Settings updated successfully!");
-                } else {
-                    showAlert(Alert.AlertType.ERROR, "Error", "Failed to update settings in database.");
-                }
-                return true;
-            }
-            return false;
-        });
-
-        dialog.showAndWait();
-    }
 }

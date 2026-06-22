@@ -84,6 +84,8 @@ public class Main extends Application {
         rootContainer.getChildren().add(borrowerPortal.getView());
     }
 
+
+
     public Stage getPrimaryStage() {
         return primaryStage;
     }
