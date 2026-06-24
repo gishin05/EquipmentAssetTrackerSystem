@@ -154,13 +154,14 @@ public class UserDAO {
     }
 
     public boolean updateUserSettings(User user) {
-        String query = "UPDATE users SET email = ?, full_name = ?, theme_preference = ? WHERE user_id = ?";
+        String query = "UPDATE users SET email = ?, full_name = ?, theme_preference = ?, username = ? WHERE user_id = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             pstmt.setString(1, user.getEmail());
             pstmt.setString(2, user.getFullName());
             pstmt.setString(3, user.getThemePreference());
-            pstmt.setInt(4, user.getUserId());
+            pstmt.setString(4, user.getUsername());
+            pstmt.setInt(5, user.getUserId());
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();

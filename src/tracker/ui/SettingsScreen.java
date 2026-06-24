@@ -52,6 +52,10 @@ public class SettingsScreen {
         profileGrid.setHgap(16);
         profileGrid.setVgap(14);
 
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Username");
+        if (currentUser.getUsername() != null) usernameField.setText(currentUser.getUsername());
+
         TextField fullNameField = new TextField();
         fullNameField.setPromptText("Full Name");
         if (currentUser.getFullName() != null) fullNameField.setText(currentUser.getFullName());
@@ -65,13 +69,15 @@ public class SettingsScreen {
         String currentTheme = currentUser.getThemePreference() != null ? currentUser.getThemePreference() : "DARK";
         themeBox.setValue(currentTheme);
 
+        Label l0 = new Label("Username");  l0.getStyleClass().add("form-label");
         Label l1 = new Label("Full Name"); l1.getStyleClass().add("form-label");
         Label l2 = new Label("Email");     l2.getStyleClass().add("form-label");
         Label l3 = new Label("Theme");     l3.getStyleClass().add("form-label");
 
-        profileGrid.addRow(0, l1, fullNameField);
-        profileGrid.addRow(1, l2, emailField);
-        profileGrid.addRow(2, l3, themeBox);
+        profileGrid.addRow(0, l0, usernameField);
+        profileGrid.addRow(1, l1, fullNameField);
+        profileGrid.addRow(2, l2, emailField);
+        profileGrid.addRow(3, l3, themeBox);
 
         Separator sep = new Separator();
 
@@ -125,6 +131,7 @@ public class SettingsScreen {
             }
 
             // Update Profile
+            currentUser.setUsername(usernameField.getText());
             currentUser.setFullName(fullNameField.getText());
             currentUser.setEmail(emailField.getText());
             currentUser.setThemePreference(themeBox.getValue());

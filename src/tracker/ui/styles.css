@@ -545,7 +545,6 @@
 .text-field:focused,
 .password-field:focused {
     -fx-border-color: -border-focus;
-    -fx-background-color: #ffffff;
     -fx-effect: dropshadow(gaussian, rgba(120, 94, 240, 0.12), 8, 0.2, 0, 0);
 }
 
@@ -1010,7 +1009,7 @@
 }
 
 .modern-table .column-header-background {
-    -fx-background-color: #faf9fd;
+    -fx-background-color: -bg-depth-0;
     -fx-background-radius: 8;
     -fx-padding: 0 0 0 0;
 }
@@ -1027,7 +1026,7 @@
     -fx-font-family: "Poppins", sans-serif;
     -fx-font-weight: 700;
     -fx-font-size: 11px;
-    -fx-text-fill: -text-muted;
+    -fx-text-fill: -text-secondary;
     -fx-text-transform: uppercase;
 }
 
@@ -1039,7 +1038,7 @@
 }
 
 .modern-table .table-row-cell:odd {
-    -fx-background-color: -bg-primary;
+    -fx-background-color: -bg-table-alt;
 }
 
 .modern-table .table-row-cell:hover {
@@ -1182,22 +1181,24 @@
    7. STATUS BADGES
    ═════════════════════════════════════════════════════════════════════════ */
 
-.status-available {
+/* Text-only status indicators (inline labels) */
+.status-available, .status-returned {
     -fx-text-fill: #12b76a;
-    -fx-font-weight: 600;
+    -fx-font-weight: 700;
 }
 
 .status-borrowed {
     -fx-text-fill: #f79009;
-    -fx-font-weight: 600;
+    -fx-font-weight: 700;
 }
 
 .status-maintenance {
     -fx-text-fill: -text-danger;
-    -fx-font-weight: 600;
+    -fx-font-weight: 700;
 }
 
-.status-badge {
+/* Base Badge Style */
+.status-badge, .badge {
     -fx-font-family: "Poppins", sans-serif;
     -fx-font-size: 11px;
     -fx-font-weight: 700;
@@ -1205,10 +1206,42 @@
     -fx-background-radius: 12;
 }
 
-.status-badge-active { -fx-text-fill: #f79009; -fx-background-color: rgba(247, 144, 9, 0.1); }
-.status-badge-returned { -fx-text-fill: #4a4768; -fx-background-color: #eae8f4; }
-.status-badge-pending { -fx-text-fill: #5b47e0; -fx-background-color: rgba(91, 71, 224, 0.1); }
-.status-badge-default { -fx-text-fill: -text-secondary; -fx-background-color: -bg-input; }
+/* Green: Completed, Available, Returned, Approved */
+.status-badge-completed, .badge-completed,
+.status-badge-available, .badge-available,
+.status-badge-returned, .badge-returned,
+.status-badge-approved, .badge-approved {
+    -fx-text-fill: #0b5d36;
+    -fx-background-color: rgba(18,183,106,0.15);
+}
+
+/* Orange: Borrowed, In-Progress, Active, Queue */
+.status-badge-borrowed, .badge-borrowed,
+.status-badge-in-progress, .badge-in-progress,
+.status-badge-active, .badge-active,
+.status-badge-queue, .badge-queue {
+    -fx-text-fill: #b54708;
+    -fx-background-color: rgba(247, 144, 9, 0.15);
+}
+
+/* Red: Maintenance, Rejected */
+.status-badge-maintenance, .badge-maintenance,
+.status-badge-rejected, .badge-rejected {
+    -fx-text-fill: #b32345;
+    -fx-background-color: rgba(239, 71, 111, 0.15);
+}
+
+/* Purple: Pending */
+.status-badge-pending, .badge-pending {
+    -fx-text-fill: #5b47e0;
+    -fx-background-color: rgba(91, 71, 224, 0.15);
+}
+
+/* Default */
+.status-badge-default, .badge-default {
+    -fx-text-fill: -text-secondary;
+    -fx-background-color: -bg-input;
+}
 
 /* Force removal of borders and outlines on sidebar navigation buttons */
 .nav-item {
@@ -1225,35 +1258,6 @@
     outline: none !important;
     border: none !important;
     box-shadow: none !important;
-}
-
-/* ==========================================================================
-   ADDITIONAL STATUS COLOR SCHEME
-   - Provide clear semantic colors for booking / inventory states (available/returned)
-   - Provide badge variants suitable for use inside tables and lists
-   ========================================================================== */
-
-/* Text-only status indicators (inline labels) */
-.status-available, .status-returned {
-    -fx-text-fill: #138a3e; /* stronger green for accessibility */
-    -fx-font-weight: 700;
-}
-
-.status-available { -fx-text-fill: #12b76a; }
-.status-returned { -fx-text-fill: #12b76a; }
-
-/* Badge-style status variants (background + text) */
-.status-badge-available {
-    -fx-text-fill: #0b5d36;
-    -fx-background-color: rgba(18,183,106,0.12);
-    -fx-font-weight: 700;
-    -fx-background-radius: 12;
-}
-.status-badge-returned {
-    -fx-text-fill: #0b5d36;
-    -fx-background-color: rgba(18,183,106,0.12);
-    -fx-font-weight: 700;
-    -fx-background-radius: 12;
 }
 
 /* Provide small pill variant used inside table cells */
@@ -1345,4 +1349,11 @@
     
     -border-medium: #363251;
     -border-strong: #4a456c;
+}
+
+/* ==========================================================================
+   EXPORT PREVIEW
+   ========================================================================== */
+.preview-table .column-header .label {
+    -fx-text-fill: black !important;
 }

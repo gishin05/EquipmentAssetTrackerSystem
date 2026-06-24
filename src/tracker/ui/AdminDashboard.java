@@ -943,7 +943,7 @@ public class AdminDashboard {
 
         Button exportBtn = new Button("\u2B07 Export");
         exportBtn.getStyleClass().addAll("button", "btn-secondary");
-        exportBtn.setOnAction(e -> showExportDialog());
+        exportBtn.setOnAction(e -> showExportPreview("Inventory"));
 
         ComboBox<String> sortBox = new ComboBox<>();
         // Remove the literal "Sort:" prefix per request so the options are shorter/cleaner
@@ -1741,7 +1741,7 @@ public class AdminDashboard {
 
         Button exportBtn = new Button("\u2B07 Export");
         exportBtn.getStyleClass().addAll("button", "btn-secondary");
-        exportBtn.setOnAction(e -> showExportDialog());
+        exportBtn.setOnAction(e -> showExportPreview("Records"));
 
         ComboBox<String> sortBox = new ComboBox<>();
         // remove the explicit "Sort:" prefix for cleaner options
@@ -2331,11 +2331,11 @@ public class AdminDashboard {
 
         Button exportBtn = new Button("\u2B07 Export");
         exportBtn.getStyleClass().addAll("button", "btn-secondary");
-        exportBtn.setOnAction(e -> showExportDialog());
+        exportBtn.setOnAction(e -> showExportPreview("Maintenance Logs"));
 
         ComboBox<String> sortBox = new ComboBox<>();
         // remove the "Sort:" prefix so labels are shorter
-        sortBox.getItems().addAll("Recent First", "Oldest First", "Cost");
+        sortBox.getItems().addAll("Recent First", "Oldest First", "Maintenance Cost");
         sortBox.setValue("Recent First");
         sortBox.getStyleClass().add("form-select");
         sortBox.setPrefWidth(160);
@@ -2365,7 +2365,7 @@ public class AdminDashboard {
         colDefect.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getDefectDescription()));
         colDefect.setMinWidth(250);
 
-        TableColumn<MaintenanceLog, Double> colCost = new TableColumn<>("Parts Cost");
+        TableColumn<MaintenanceLog, Double> colCost = new TableColumn<>("Maintenance Cost");
         colCost.setCellValueFactory(c -> new SimpleDoubleProperty(c.getValue().getPartsCost()).asObject());
         colCost.setCellFactory(col -> new TableCell<>() {
             @Override
@@ -2392,7 +2392,7 @@ public class AdminDashboard {
                     setText(null);
                 } else {
                     MaintenanceLog mLog = getTableView().getItems().get(getIndex());
-                    if (item == null || item.trim().isEmpty() || "IN_PROGRESS".equals(mLog.getRepairStatus())) {
+                    if (item == null || item.trim().isEmpty() || "IN_PROGRESS".equals(mLog.getRepairStatus()) || "SCHEDULED".equals(mLog.getRepairStatus())) {
                         Button btn = new Button("Returned");
                         btn.getStyleClass().addAll("button", "btn-primary");
                         btn.setStyle("-fx-padding: 4 12; -fx-font-size: 12px;");
@@ -2438,6 +2438,8 @@ public class AdminDashboard {
                     badge.getStyleClass().add("badge");
                     if ("COMPLETED".equals(item.toUpperCase())) {
                         badge.getStyleClass().add("badge-completed");
+                    } else if ("SCHEDULED".equals(item.toUpperCase())) {
+                        badge.setStyle("-fx-background-color: #f77f00; -fx-text-fill: white; -fx-padding: 4 12; -fx-background-radius: 14; -fx-font-weight: bold; -fx-font-size: 11px;");
                     } else {
                         badge.getStyleClass().add("badge-in-progress");
                     }
@@ -2447,23 +2449,46 @@ public class AdminDashboard {
             }
         });
 
-        table.getColumns().addAll(colId, colEquip, colDefect, colCost, colTech, colStart, colEnd, colStatus);
+        TableColumn<MaintenanceLog, Void> colAction = new TableColumn<>("Actions");
+        colAction.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    Button btn = new Button("View Details");
+                    btn.getStyleClass().addAll("button", "btn-secondary");
+                    btn.setStyle("-fx-padding: 4 12; -fx-font-size: 12px;");
+                    btn.setOnAction(e -> {
+                        MaintenanceLog mLog = getTableView().getItems().get(getIndex());
+                        showMaintenanceDetails(mLog);
+                    });
+                    setGraphic(btn);
+                }
+            }
+        });
+
+        table.getColumns().addAll(colId, colEquip, colDefect, colCost, colTech, colStart, colEnd, colStatus, colAction);
 
         ObservableList<MaintenanceLog> data = FXCollections.observableArrayList(maintenanceDAO.getAllMaintenanceLogs());
         sortBox.valueProperty().addListener((obs, oldVal, newVal) -> {
             if ("Recent First".equals(newVal)) {
-                FXCollections.sort(data, java.util.Comparator.comparing((MaintenanceLog m) -> m.getStartDate() == null ? "" : m.getStartDate()).reversed());
+                FXCollections.sort(data, java.util.Comparator.comparing(MaintenanceLog::getLogId).reversed());
             } else if ("Oldest First".equals(newVal)) {
-                FXCollections.sort(data, java.util.Comparator.comparing(m -> m.getStartDate() == null ? "" : m.getStartDate()));
-            } else if ("Cost".equals(newVal)) {
+                FXCollections.sort(data, java.util.Comparator.comparing(MaintenanceLog::getLogId));
+            } else if ("Maintenance Cost".equals(newVal)) {
                 FXCollections.sort(data, java.util.Comparator.comparing(MaintenanceLog::getPartsCost).reversed());
             }
         });
-        FXCollections.sort(data, java.util.Comparator.comparing((MaintenanceLog m) -> m.getStartDate() == null ? "" : m.getStartDate()).reversed());
-        table.setItems(data);
+        FXCollections.sort(data, java.util.Comparator.comparing(MaintenanceLog::getLogId).reversed());
+        
+        javafx.collections.transformation.SortedList<MaintenanceLog> sortedData = new javafx.collections.transformation.SortedList<>(data);
+        sortedData.comparatorProperty().bind(table.comparatorProperty());
+        table.setItems(sortedData);
 
         // Add maintenance dialog
-        addBtn.setOnAction(e -> showAddMaintenanceDialog(data));
+        addBtn.setOnAction(e -> showAddMaintenanceDialog(data, sortBox));
 
         panel.getChildren().addAll(toolbar, table);
         contentArea.getChildren().add(panel);
@@ -2472,7 +2497,7 @@ public class AdminDashboard {
         animatePanelEntrance(panel);
     }
 
-    private void showAddMaintenanceDialog(ObservableList<MaintenanceLog> data) {
+    private void showAddMaintenanceDialog(ObservableList<MaintenanceLog> data, ComboBox<String> sortBox) {
         Dialog<MaintenanceLog> dialog = new Dialog<>();
         dialog.setTitle("Log Maintenance");
         dialog.initOwner(mainApp.getPrimaryStage());
@@ -2565,20 +2590,21 @@ public class AdminDashboard {
         defectField.getStyleClass().add("form-textarea");
 
         TextField costField = new TextField();
-        costField.setPromptText("Parts Cost");
+        costField.setPromptText("Maintenance Cost");
         costField.getStyleClass().add("form-input");
 
         TextField techField = new TextField();
         techField.setPromptText("Technician Name/Details");
         techField.getStyleClass().add("form-input");
 
-        TextField dateField = new TextField();
+        DatePicker dateField = new DatePicker();
         dateField.setPromptText("YYYY-MM-DD");
         dateField.getStyleClass().add("form-input");
+        dateField.setMaxWidth(Double.MAX_VALUE);
 
         Label l1 = new Label("Equipment Name"); l1.getStyleClass().add("form-label");
         Label l2 = new Label("Defect");       l2.getStyleClass().add("form-label");
-        Label l3 = new Label("Parts Cost");   l3.getStyleClass().add("form-label");
+        Label l3 = new Label("Maintenance Cost");   l3.getStyleClass().add("form-label");
         Label l4 = new Label("Technician");   l4.getStyleClass().add("form-label");
         Label l5 = new Label("Start Date");   l5.getStyleClass().add("form-label");
 
@@ -2619,8 +2645,18 @@ public class AdminDashboard {
                     log.setPartsCost(0);
                 }
                 log.setTechnicianDetails(techField.getText());
-                log.setStartDate(dateField.getText());
-                log.setRepairStatus("IN_PROGRESS");
+                String startDateStr = dateField.getValue() != null ? dateField.getValue().toString() : dateField.getEditor().getText();
+                log.setStartDate(startDateStr);
+                try {
+                    java.time.LocalDate sDate = java.time.LocalDate.parse(startDateStr);
+                    if (sDate.isAfter(java.time.LocalDate.now())) {
+                        log.setRepairStatus("SCHEDULED");
+                    } else {
+                        log.setRepairStatus("IN_PROGRESS");
+                    }
+                } catch (Exception e) {
+                    log.setRepairStatus("IN_PROGRESS");
+                }
                 return log;
             }
             return null;
@@ -2629,8 +2665,58 @@ public class AdminDashboard {
         dialog.showAndWait().ifPresent(log -> {
             if (maintenanceDAO.addMaintenanceLog(log)) {
                 data.setAll(maintenanceDAO.getAllMaintenanceLogs());
+                String currentSort = sortBox.getValue();
+                if ("Recent First".equals(currentSort)) {
+                    FXCollections.sort(data, java.util.Comparator.comparing(MaintenanceLog::getLogId).reversed());
+                } else if ("Oldest First".equals(currentSort)) {
+                    FXCollections.sort(data, java.util.Comparator.comparing(MaintenanceLog::getLogId));
+                } else if ("Maintenance Cost".equals(currentSort)) {
+                    FXCollections.sort(data, java.util.Comparator.comparing(MaintenanceLog::getPartsCost).reversed());
+                }
             }
         });
+    }
+
+    private void showMaintenanceDetails(MaintenanceLog log) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Maintenance Details");
+        dialog.initOwner(mainApp.getPrimaryStage());
+
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.setStyle(
+            "-fx-background-color: #1a1a2e; -fx-border-color: #2a2a45; -fx-border-radius: 12; -fx-background-radius: 12;"
+        );
+        dialogPane.getButtonTypes().add(ButtonType.CLOSE);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(16);
+        grid.setVgap(14);
+        grid.setPadding(new Insets(24));
+
+        Equipment eq = equipmentDAO.getEquipmentById(log.getEquipmentId());
+        String eqName = eq != null ? eq.getEquipmentName() : "Unknown";
+
+        addMaintenanceDetailRow(grid, 0, "Log ID:", String.valueOf(log.getLogId()));
+        addMaintenanceDetailRow(grid, 1, "Equipment:", eqName);
+        addMaintenanceDetailRow(grid, 2, "Defect:", log.getDefectDescription());
+        addMaintenanceDetailRow(grid, 3, "Maintenance Cost:", String.format("\u20B1%.2f", log.getPartsCost()));
+        addMaintenanceDetailRow(grid, 4, "Technician:", log.getTechnicianDetails());
+        addMaintenanceDetailRow(grid, 5, "Start Date:", log.getStartDate());
+        addMaintenanceDetailRow(grid, 6, "Completion Date:", log.getCompletionDate() != null ? log.getCompletionDate() : "N/A");
+        addMaintenanceDetailRow(grid, 7, "Status:", log.getRepairStatus());
+
+        dialogPane.setContent(grid);
+        dialog.showAndWait();
+    }
+
+    private void addMaintenanceDetailRow(GridPane grid, int row, String label, String value) {
+        Label l = new Label(label);
+        l.setStyle("-fx-text-fill: -text-secondary; -fx-font-size: 13px; -fx-font-weight: bold;");
+        Label v = new Label(value != null && !value.isEmpty() ? value : "—");
+        v.setStyle("-fx-text-fill: -text-primary; -fx-font-size: 13px;");
+        v.setWrapText(true);
+        v.setMaxWidth(300);
+        grid.addRow(row, l, v);
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -2660,7 +2746,7 @@ public class AdminDashboard {
         Button exportBtn = new Button("\uD83D\uDCE4 Export");
         exportBtn.getStyleClass().addAll("button", "btn-primary");
         exportBtn.setId("export-data");
-        exportBtn.setOnAction(e -> showExportDialog());
+        exportBtn.setOnAction(e -> showExportPreview("Logs"));
 
         Button refreshBtn = new Button("↻ Refresh");
         refreshBtn.getStyleClass().add("button");
@@ -2878,9 +2964,9 @@ public class AdminDashboard {
     //  EXPORT PANEL
     // ═══════════════════════════════════════════════════════════
 
-    private void showExportDialog() {
-        Dialog<String> dialog = new Dialog<>();
-        dialog.setTitle("Export Data");
+    private void showExportPreview(String dataType) {
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle("Export " + dataType);
         dialog.initOwner(mainApp.getPrimaryStage());
 
         DialogPane dialogPane = dialog.getDialogPane();
@@ -2889,92 +2975,161 @@ public class AdminDashboard {
         );
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
-        // ── Dialog Content ──
-        VBox content = new VBox(20);
-        content.setPadding(new Insets(28, 32, 12, 32));
-        content.getStyleClass().add("modal-card");
+        VBox content = new VBox(16);
+        content.setPadding(new Insets(24, 28, 12, 28));
 
-        Label titleLbl = new Label("Select Data to Export");
-        titleLbl.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #e8e8f0;");
+        Label titleLbl = new Label("Export Preview: " + dataType);
+        titleLbl.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: black;");
 
-        Label descLbl = new Label("Choose a data source to export as a CSV file.");
-        descLbl.setStyle("-fx-font-size: 13px; -fx-text-fill: #8888a8;");
+        Label descLbl = new Label("Review the first few rows of the data before exporting.");
+        descLbl.setStyle("-fx-font-size: 13px; -fx-text-fill: #555555;");
 
-        // Option cards in a VBox
-        ToggleGroup group = new ToggleGroup();
+        TableView<ObservableList<String>> previewArea = new TableView<>();
+        previewArea.getStyleClass().add("preview-table");
+        previewArea.setPrefHeight(250);
+        previewArea.setPrefWidth(700);
+        previewArea.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
 
-        RadioButton optInventory  = buildExportOption(group, "📦", "Inventory",  "All equipment, status, specs, location and cost");
-        RadioButton optRecords    = buildExportOption(group, "📄", "Records",    "All borrowing booking records with status");
-        RadioButton optAuditLogs  = buildExportOption(group, "📋", "Logs", "System activity: inserts, updates and deletes");
-
-        optInventory.setSelected(true);
-
-        VBox optionsBox = new VBox(10, optInventory, optRecords, optAuditLogs);
-
-        content.getChildren().addAll(titleLbl, descLbl, optionsBox);
-        dialogPane.setContent(content);
-
-        // Style OK button: use primary (violet) class instead of inline blue gradient
-        Button dlgOk = (Button) dialogPane.lookupButton(ButtonType.OK);
-        if (dlgOk != null) {
-            dlgOk.getStyleClass().addAll("button", "btn-primary");
-            dlgOk.setStyle("-fx-padding: 10 28; -fx-font-weight: bold;");
+        String csvData = generateCSVPreview(dataType, 10);
+        String[] lines = csvData.split("\n");
+        if (lines.length > 0) {
+            String[] headers = lines[0].split(",");
+            for (int i = 0; i < headers.length; i++) {
+                final int colIndex = i;
+                TableColumn<ObservableList<String>, String> column = new TableColumn<>(headers[i]);
+                column.setCellValueFactory(param -> new javafx.beans.property.SimpleStringProperty(
+                    param.getValue().size() > colIndex ? param.getValue().get(colIndex) : ""
+                ));
+                previewArea.getColumns().add(column);
+            }
+            
+            ObservableList<ObservableList<String>> rows = FXCollections.observableArrayList();
+            for (int i = 1; i < lines.length; i++) {
+                String line = lines[i];
+                if (line.trim().isEmpty()) continue;
+                List<String> rowValues = new java.util.ArrayList<>();
+                boolean inQuotes = false;
+                StringBuilder val = new StringBuilder();
+                for (char c : line.toCharArray()) {
+                    if (c == '"') {
+                        inQuotes = !inQuotes;
+                    } else if (c == ',' && !inQuotes) {
+                        rowValues.add(val.toString());
+                        val.setLength(0);
+                    } else {
+                        val.append(c);
+                    }
+                }
+                rowValues.add(val.toString());
+                rows.add(FXCollections.observableArrayList(rowValues));
+            }
+            previewArea.setItems(rows);
         }
 
-        dialog.setResultConverter(btn -> {
-            if (btn == ButtonType.OK) {
-                RadioButton selected = (RadioButton) group.getSelectedToggle();
-                return selected != null ? selected.getUserData().toString() : null;
-            }
-            return null;
-        });
+        content.getChildren().addAll(titleLbl, descLbl, previewArea);
+        dialogPane.setContent(content);
 
-        dialog.showAndWait().ifPresent(choice -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Save " + choice + " Export");
-            fileChooser.setInitialFileName(choice.toLowerCase().replace(" ", "_") + "_export.csv");
-            fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("CSV Files (*.csv)", "*.csv")
-            );
-            File file = fileChooser.showSaveDialog(mainApp.getPrimaryStage());
-            if (file != null) {
-                exportToCSV(choice, file);
+        Button dlgOk = (Button) dialogPane.lookupButton(ButtonType.OK);
+        if (dlgOk != null) {
+            dlgOk.setText("Export to CSV");
+            dlgOk.getStyleClass().addAll("button", "btn-primary");
+            dlgOk.setStyle("-fx-padding: 8 20; -fx-font-weight: bold;");
+        }
+
+        dialog.setResultConverter(btn -> btn == ButtonType.OK);
+
+        dialog.showAndWait().ifPresent(proceed -> {
+            if (proceed) {
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setTitle("Save " + dataType + " Export");
+                fileChooser.setInitialFileName(dataType.toLowerCase().replace(" ", "_") + "_export.csv");
+                fileChooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("CSV Files (*.csv)", "*.csv")
+                );
+                File file = fileChooser.showSaveDialog(mainApp.getPrimaryStage());
+                if (file != null) {
+                    exportToCSV(dataType, file);
+                }
             }
         });
     }
 
-    private RadioButton buildExportOption(ToggleGroup group, String icon, String label, String desc) {
-        RadioButton rb = new RadioButton();
-        rb.setToggleGroup(group);
-        rb.setUserData(label);
-        rb.setMaxWidth(Double.MAX_VALUE);
-
-        VBox textBox = new VBox(2);
-        Label titleLbl = new Label(icon + "  " + label);
-        // use theme tokens so colors match current theme
-        titleLbl.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: -text-primary;");
-        Label descLbl = new Label(desc);
-        descLbl.setStyle("-fx-font-size: 12px; -fx-text-fill: -text-secondary;");
-        textBox.getChildren().addAll(titleLbl, descLbl);
-
-        // Use the RadioButton's graphic to render a full-width card row.
-        rb.setGraphic(textBox);
-        rb.getStyleClass().add("export-option");
-        rb.setCursor(javafx.scene.Cursor.HAND);
-        rb.setOnMouseClicked(e -> rb.setSelected(true));
-
-        // Toggle a selected CSS class on the RadioButton so the stylesheet can update the
-        // visual card state (keeps styling centralized in CSS rather than inline styles).
-        rb.selectedProperty().addListener((obs, oldVal, selected) -> {
-            if (selected) {
-                if (!rb.getStyleClass().contains("export-option-selected"))
-                    rb.getStyleClass().add("export-option-selected");
-            } else {
-                rb.getStyleClass().remove("export-option-selected");
+    private String generateCSVPreview(String dataType, int limit) {
+        StringBuilder sb = new StringBuilder();
+        try {
+            switch (dataType) {
+                case "Inventory" -> {
+                    sb.append("Equipment ID,Serial Number,Category ID,Specifications,Location,Purchase Cost,Purchase Date,Status,Assigned To\n");
+                    List<Equipment> list = equipmentDAO.getAllEquipment();
+                    for (int i = 0; i < Math.min(limit, list.size()); i++) {
+                        Equipment eq = list.get(i);
+                        sb.append(String.join(",",
+                            String.valueOf(eq.getEquipmentId()),
+                            csv(eq.getSerialNumber()),
+                            String.valueOf(eq.getCategoryId()),
+                            csv(eq.getTechnicalSpecifications()),
+                            csv(eq.getStorageLocation()),
+                            String.format("%.2f", eq.getPurchaseCost()),
+                            csv(eq.getPurchaseDate()),
+                            csv(eq.getEquipmentStatus()),
+                            eq.getAssignedTo() != null ? String.valueOf(eq.getAssignedTo()) : ""
+                        )).append("\n");
+                    }
+                }
+                case "Records" -> {
+                    sb.append("Booking ID,Equipment ID,Borrower ID,Start Date,Expected Return,Purpose,Status\n");
+                    List<Booking> list = bookingDAO.getAllBookings();
+                    for (int i = 0; i < Math.min(limit, list.size()); i++) {
+                        Booking b = list.get(i);
+                        sb.append(String.join(",",
+                            String.valueOf(b.getBookingId()),
+                            String.valueOf(b.getEquipmentId()),
+                            String.valueOf(b.getBorrowerId()),
+                            csv(b.getStartDatetime()),
+                            csv(b.getExpectedReturnDatetime()),
+                            csv(b.getPurposeDescription()),
+                            csv(b.getBookingStatus())
+                        )).append("\n");
+                    }
+                }
+                case "Logs" -> {
+                    sb.append("Audit ID,Action Type,Affected Table,Record ID,Timestamp,User ID\n");
+                    List<AuditLog> list = auditDAO.getAllAuditLogs();
+                    for (int i = 0; i < Math.min(limit, list.size()); i++) {
+                        AuditLog log = list.get(i);
+                        sb.append(String.join(",",
+                            String.valueOf(log.getAuditId()),
+                            csv(log.getActionType()),
+                            csv(log.getAffectedTable()),
+                            String.valueOf(log.getRecordId()),
+                            csv(log.getActionTimestamp()),
+                            String.valueOf(log.getUserId())
+                        )).append("\n");
+                    }
+                }
+                case "Maintenance Logs" -> {
+                    sb.append("Log ID,Equipment ID,Defect,Maintenance Cost,Technician,Start Date,Completion Date,Status\n");
+                    List<MaintenanceLog> list = maintenanceDAO.getAllMaintenanceLogs();
+                    for (int i = 0; i < Math.min(limit, list.size()); i++) {
+                        MaintenanceLog m = list.get(i);
+                        sb.append(String.join(",",
+                            String.valueOf(m.getLogId()),
+                            String.valueOf(m.getEquipmentId()),
+                            csv(m.getDefectDescription()),
+                            String.format("%.2f", m.getPartsCost()),
+                            csv(m.getTechnicianDetails()),
+                            csv(m.getStartDate()),
+                            csv(m.getCompletionDate()),
+                            csv(m.getRepairStatus())
+                        )).append("\n");
+                    }
+                }
             }
-        });
-
-        return rb;
+        } catch (Exception e) {
+            sb.append("Error generating preview: ").append(e.getMessage());
+        }
+        if (sb.length() == 0) sb.append("No data available.");
+        return sb.toString();
     }
 
     private void exportToCSV(String dataType, File file) {
@@ -3025,6 +3180,23 @@ public class AdminDashboard {
                             String.valueOf(log.getRecordId()),
                             csv(log.getActionTimestamp()),
                             String.valueOf(log.getUserId())
+                        ));
+                        writer.newLine();
+                    }
+                }
+                case "Maintenance Logs" -> {
+                    writer.write("Log ID,Equipment ID,Defect,Maintenance Cost,Technician,Start Date,Completion Date,Status");
+                    writer.newLine();
+                    for (MaintenanceLog m : maintenanceDAO.getAllMaintenanceLogs()) {
+                        writer.write(String.join(",",
+                            String.valueOf(m.getLogId()),
+                            String.valueOf(m.getEquipmentId()),
+                            csv(m.getDefectDescription()),
+                            String.format("%.2f", m.getPartsCost()),
+                            csv(m.getTechnicianDetails()),
+                            csv(m.getStartDate()),
+                            csv(m.getCompletionDate()),
+                            csv(m.getRepairStatus())
                         ));
                         writer.newLine();
                     }
